@@ -1,0 +1,16 @@
+{
+  "name": "SABAMAS - Sistem Billing Sampah",
+  "short_name": "SABAMAS",
+  "description": "Aplikasi billing dan manajemen pembayaran sampah",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

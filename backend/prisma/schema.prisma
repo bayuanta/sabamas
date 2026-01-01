@@ -1,0 +1,268 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Note: SQLite doesn't support enums, using String with default values
+// Validate in application layer
+
+// Customer (Pelanggan)
+model Customer {
+  id                    String           @id @default(uuid())
+  nomor_pelanggan       String           @unique // Nomor pelanggan unik untuk login
+  nama                  String
+  alamat                String
+  wilayah               String
+  nomor_telepon         String?
+  tarif_id              String
+  tanggal_efektif_tarif DateTime         @default(now())
+  status                String           @default("aktif") // "aktif" | "nonaktif"
+  tanggal_bergabung     DateTime         @default(now())
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  // Relations
+  tarif                 TarifCategory    @relation(fields: [tarif_id], references: [id])
+  tarifHistories        TarifHistory[]
+  tarifOverrides        TarifOverride[]
+  payments              Payment[]
+  customerAccess        CustomerAccess?
+  statusHistories       CustomerStatusHistory[]
+
+  @@index([wilayah])
+  @@index([status])
+  @@index([tarif_id])
+  @@index([nomor_pelanggan])
+  @@map("customers")
+}
+
+// TarifCategory (Kategori Tarif)
+model TarifCategory {
+  id               String     @id @default(uuid())
+  nama_kategori    String     @unique
+  harga_per_bulan  Float
+  deskripsi        String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  // Relations
+  customers        Customer[]
+
+  @@map("tarif_categories")
+}
+
+// TarifHistory (Riwayat Tarif Custom)
+model TarifHistory {
+  id             String   @id @default(uuid())
+  customer_id    String
+  tarif_amount   Float
+  bulan_berlaku  String   // Format: "YYYY-MM"
+  catatan        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  customer       Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@unique([customer_id, bulan_berlaku])
+  @@index([customer_id])
+  @@index([bulan_berlaku])
+  @@map("tarif_histories")
+}
+
+// TarifOverride (Override Tarif Manual)
+model TarifOverride {
+  id                String   @id @default(uuid())
+  customer_id       String
+  bulan_berlaku     String   // Format: "YYYY-MM"
+  tarif_amount      Float
+  catatan           String?  // untuk diskon/promo
+  created_by_user   String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  customer          Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  createdBy         User     @relation(fields: [created_by_user], references: [id])
+
+  @@unique([customer_id, bulan_berlaku])
+  @@index([customer_id])
+  @@index([bulan_berlaku])
+  @@map("tarif_overrides")
+}
+
+// Payment (Pembayaran)
+model Payment {
+  id             String       @id @default(uuid())
+  customer_id    String
+  customer_nama  String
+  tanggal_bayar  DateTime     // dengan timezone WIB
+  bulan_dibayar  String       // JSON array of "YYYY-MM"
+  jumlah_bayar   Float
+  diskon_nominal Float?       // Nominal discount in Rupiah
+  subtotal       Float?       // Amount before discount
+  metode_bayar   String       @default("tunai") // "tunai" | "transfer"
+  catatan        String?
+  month_breakdown String?     // JSON object with tariff details per month: {"2025-08": {"amount": 15000, "source": "history"}}
+  is_deposited   Boolean      @default(false) // Track jika sudah disetor
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  customer       Customer     @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id])
+  @@index([tanggal_bayar])
+  @@index([metode_bayar])
+  @@index([is_deposited])
+  @@map("payments")
+}
+
+// Setoran (Deposit ke Bendahara)
+model Setoran {
+  id            String    @id @default(uuid())
+  tanggal_setor DateTime
+  jumlah_setor  Float
+  periode_awal  DateTime
+  periode_akhir DateTime
+  catatan       String?
+  payment_ids   String    // JSON array of payment IDs
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Note: payments are tracked via payment_ids JSON field
+
+  @@index([tanggal_setor])
+  @@map("setorans")
+}
+
+// User (Pengguna Aplikasi - Admin/Staf)
+model User {
+  id             String      @id @default(uuid())
+  nama           String
+  email          String      @unique
+  password_hash  String
+  role           String      @default("collector") // "admin" | "collector" | "finance"
+  status         String      @default("aktif") // "aktif" | "nonaktif"
+  last_login     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  tarifOverrides TarifOverride[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+// CustomerAccess (Akses Portal Pelanggan)
+model CustomerAccess {
+  id            String    @id @default(uuid())
+  customer_id   String    @unique
+  login_key     String    // PIN/OTP sederhana
+  last_access   DateTime?
+  is_registered Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  customer      Customer  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id])
+  @@map("customer_access")
+}
+
+// Settings (Pengaturan Aplikasi)
+model Settings {
+  id              String   @id @default(uuid())
+  app_name        String   @default("SABAMAS")
+  app_description String   @default("Sistem Billing Sampah")
+  logo            String?
+  
+  // Company Information
+  company_name    String?  @default("SABAMAS")
+  address         String?
+  city            String?
+  postal_code     String?
+  phone           String?
+  email           String?
+  website         String?
+  
+  // Letter Configuration
+  letter_header   String?  // Custom header text for official letters
+  letter_footer   String?  // Custom footer text
+  signature_name  String?  // Name for signature
+  signature_title String?  // Title/position for signature
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// Wilayah (Daftar Wilayah)
+model Wilayah {
+  id        String   @id @default(uuid())
+  nama      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wilayahs")
+}
+
+// CustomerStatusHistory (Riwayat Status Pelanggan)
+model CustomerStatusHistory {
+  id              String    @id @default(uuid())
+  customer_id     String
+  status          String    // "aktif" | "nonaktif"
+  tanggal_mulai   DateTime  @default(now())
+  tanggal_selesai DateTime? // null jika masih berlaku
+  keterangan      String?   // Alasan perubahan status
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  customer        Customer  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@index([customer_id])
+  @@index([tanggal_mulai])
+  @@map("customer_status_history")
+}
+
+// RosokTransaction (Transaksi Penjualan Rongsok Header)
+model RosokTransaction {
+  id          String      @id @default(uuid())
+  tanggal     DateTime    @default(now())
+  pembeli     String?     // Nama pembeli/pengepul
+  catatan     String?
+  total_harga Float       // Grand Total
+  items       RosokItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("rosok_transactions")
+}
+
+// RosokItem (Detail Item Penjualan Rongsok)
+model RosokItem {
+  id             String           @id @default(uuid())
+  transaction_id String
+  jenis_barang   String           // e.g. "Kardus", "Besi"
+  berat          Float            // kg
+  harga_per_kg   Float
+  total_harga    Float            // Subtotal
+  
+  // Relations
+  transaction    RosokTransaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+
+  @@index([transaction_id])
+  @@map("rosok_items")
+}

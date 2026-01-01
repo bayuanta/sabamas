@@ -1,0 +1,426 @@
+'use client'
+
+import AdminLayout from '@/components/AdminLayout'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { customersApi, paymentsApi } from '@/lib/api'
+import { formatCurrency, formatMonth } from '@/lib/utils'
+import Button from '@/components/ui/Button'
+import Card from '@/components/ui/Card'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import Badge from '@/components/ui/Badge'
+import Modal from '@/components/ui/Modal'
+import { Search, CheckCircle, Users, DollarSign } from 'lucide-react'
+import Link from 'next/link'
+
+interface SelectedCustomerPayment {
+  customer: any
+  selectedMonths: string[]
+  totalAmount: number
+}
+
+export default function BulkBillingPage() {
+  const queryClient = useQueryClient()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [wilayah, setWilayah] = useState('')
+  const [selectedCustomers, setSelectedCustomers] = useState<Map<string, SelectedCustomerPayment>>(new Map())
+  const [metodeBayar, setMetodeBayar] = useState<'tunai' | 'transfer'>('tunai')
+  const [namaPembayar, setNamaPembayar] = useState('')
+  const [catatan, setCatatan] = useState('')
+  const [successModalOpen, setSuccessModalOpen] = useState(false)
+  const [processingResults, setProcessingResults] = useState<any[]>([])
+  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null)
+  const [customerArrears, setCustomerArrears] = useState<Map<string, any>>(new Map())
+
+  const { data: customers } = useQuery({
+    queryKey: ['customers-bulk', { searchTerm, wilayah }],
+    queryFn: async () => {
+      const params: any = { limit: 50, status: 'aktif' }
+      if (searchTerm) params.search = searchTerm
+      if (wilayah) params.wilayah = wilayah
+      const { data } = await customersApi.getAll(params)
+      return data
+    },
+  })
+
+  const { data: wilayahList } = useQuery({
+    queryKey: ['wilayah-list'],
+    queryFn: async () => {
+      const { data } = await customersApi.getWilayahList()
+      return data
+    },
+  })
+
+  const processPaymentsMutation = useMutation({
+    mutationFn: async (payments: any[]) => {
+      const results = []
+      for (const payment of payments) {
+        try {
+          const { data } = await paymentsApi.create(payment)
+          results.push({ success: true, customer: payment.customer_nama, data })
+        } catch (error: any) {
+          results.push({ success: false, customer: payment.customer_nama, error: error.message })
+        }
+      }
+      return results
+    },
+    onSuccess: (results) => {
+      setProcessingResults(results)
+      setSuccessModalOpen(true)
+      setSelectedCustomers(new Map())
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+    },
+  })
+
+  const loadCustomerArrears = async (customerId: string) => {
+    if (customerArrears.has(customerId)) {
+      // Already loaded, just toggle expand
+      setExpandedCustomer(expandedCustomer === customerId ? null : customerId)
+      return
+    }
+
+    try {
+      const { data } = await customersApi.getOne(customerId)
+      const newArrearsMap = new Map(customerArrears)
+      newArrearsMap.set(customerId, data.arrears)
+      setCustomerArrears(newArrearsMap)
+      setExpandedCustomer(customerId)
+    } catch (error) {
+      console.error('Error loading customer arrears:', error)
+    }
+  }
+
+  const toggleMonthForCustomer = (customerId: string, month: string, customer: any, arrearAmount: number) => {
+    const newMap = new Map(selectedCustomers)
+    const existing = newMap.get(customerId)
+
+    if (existing) {
+      const monthIndex = existing.selectedMonths.indexOf(month)
+      if (monthIndex > -1) {
+        // Remove month
+        const newMonths = existing.selectedMonths.filter(m => m !== month)
+        if (newMonths.length === 0) {
+          newMap.delete(customerId)
+        } else {
+          newMap.set(customerId, {
+            ...existing,
+            selectedMonths: newMonths,
+            totalAmount: existing.totalAmount - arrearAmount,
+          })
+        }
+      } else {
+        // Add month
+        newMap.set(customerId, {
+          ...existing,
+          selectedMonths: [...existing.selectedMonths, month],
+          totalAmount: existing.totalAmount + arrearAmount,
+        })
+      }
+    } else {
+      // Add new customer with first month
+      newMap.set(customerId, {
+        customer,
+        selectedMonths: [month],
+        totalAmount: arrearAmount,
+      })
+    }
+
+    setSelectedCustomers(newMap)
+  }
+
+  const handleProcessPayments = () => {
+    if (selectedCustomers.size === 0 || !namaPembayar) return
+
+    const payments = Array.from(selectedCustomers.values()).map(item => ({
+      customer_id: item.customer.id,
+      customer_nama: item.customer.nama,
+      bulan_dibayar: item.selectedMonths,
+      jumlah_bayar: item.totalAmount,
+      metode_bayar: metodeBayar,
+      catatan: `Pembayaran kolektif oleh: ${namaPembayar}${catatan ? ` - ${catatan}` : ''}`,
+    }))
+
+    processPaymentsMutation.mutate(payments)
+  }
+
+  const totalSelectedCustomers = selectedCustomers.size
+  const totalAmount = Array.from(selectedCustomers.values()).reduce((sum, item) => sum + item.totalAmount, 0)
+  const totalMonths = Array.from(selectedCustomers.values()).reduce((sum, item) => sum + item.selectedMonths.length, 0)
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Billing Kolektif</h1>
+            <p className="text-sm text-gray-600">Proses pembayaran untuk multiple pelanggan sekaligus</p>
+          </div>
+          <Link href="/billing">
+            <Button variant="secondary" size="sm">← Kembali ke Individual</Button>
+          </Link>
+        </div>
+
+        {/* Split Layout: Left (Customer Search) & Right (Payment Detail) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          {/* LEFT SIDE: Customer Search */}
+          <div className="lg:col-span-2 space-y-4">
+            <Card title="Pilih Pelanggan">
+              <div className="space-y-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input
+                    placeholder="Cari nama atau alamat..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Wilayah Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Filter Wilayah
+                  </label>
+                  <select
+                    value={wilayah}
+                    onChange={(e) => setWilayah(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">Semua Wilayah</option>
+                    {wilayahList?.map((w: string) => (
+                      <option key={w} value={w}>{w}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Customer List */}
+              <div className="mt-4 space-y-2 max-h-[600px] overflow-y-auto">
+          {customers?.data && customers.data.length > 0 ? (
+            <>
+              {customers.data.map((customer: any) => {
+                const isSelected = selectedCustomers.has(customer.id)
+                const selectedData = selectedCustomers.get(customer.id)
+
+                return (
+                  <button
+                    key={customer.id}
+                    onClick={() => loadCustomerArrears(customer.id)}
+                    className={`w-full text-left p-3 border-2 rounded-lg transition ${
+                      isSelected
+                        ? 'border-primary bg-primary-50'
+                        : 'border-gray-200 hover:border-primary hover:bg-primary-50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">{customer.nama}</p>
+                        <p className="text-xs text-gray-600">{customer.alamat}</p>
+                        <Badge variant="info" className="mt-1 text-xs">{customer.wilayah}</Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold text-red-600">
+                          {formatCurrency(customer.tunggakan || 0)}
+                        </p>
+                        <p className="text-xs text-gray-500">{customer.bulan_tunggakan || 0} bulan</p>
+                      </div>
+                    </div>
+
+                    {/* Show selected badge */}
+                    {isSelected && selectedData && (
+                      <div className="mt-2 text-xs text-primary font-semibold">
+                        ✓ {selectedData.selectedMonths.length} bulan dipilih - {formatCurrency(selectedData.totalAmount)}
+                      </div>
+                    )}
+
+                  </button>
+                )
+              })}
+            </>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-gray-500 text-xs">Tidak ada pelanggan</p>
+            </div>
+          )}
+              </div>
+            </Card>
+          </div>
+
+          {/* RIGHT SIDE: Payment Detail & Selected Customers */}
+          <div className="lg:col-span-3 space-y-4">
+            {totalSelectedCustomers === 0 ? (
+              <Card>
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 font-medium">Pilih pelanggan terlebih dahulu</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Klik pelanggan di sebelah kiri untuk memilih bulan pembayaran
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <>
+                {/* Selected Customers & Months */}
+                {expandedCustomer && customerArrears.has(expandedCustomer) && (
+                  <Card title={`Pilih Bulan - ${customers?.data.find((c: any) => c.id === expandedCustomer)?.nama}`}>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {customerArrears.get(expandedCustomer)?.arrearMonths?.length > 0 ? (
+                        <>
+                          {customerArrears.get(expandedCustomer).arrearMonths.map((arrear: any) => {
+                            const customer = customers?.data.find((c: any) => c.id === expandedCustomer)
+                            const selectedData = selectedCustomers.get(expandedCustomer)
+                            const isMonthSelected = selectedData?.selectedMonths.includes(arrear.month)
+                            
+                            return (
+                              <div
+                                key={arrear.month}
+                                onClick={() => toggleMonthForCustomer(expandedCustomer, arrear.month, customer, arrear.amount)}
+                                className={`p-3 border-2 rounded-lg cursor-pointer transition ${
+                                  isMonthSelected
+                                    ? 'border-primary bg-primary-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={isMonthSelected}
+                                    onChange={() => {}}
+                                    className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                                  />
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 text-sm">{formatMonth(arrear.month)}</p>
+                                    {arrear.details && (
+                                      <p className="text-xs text-gray-500">{arrear.details}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-bold text-gray-900 text-sm">{formatCurrency(arrear.amount)}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">Tidak ada tunggakan</p>
+                      )}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Summary Card */}
+                <Card>
+                  <div className="grid grid-cols-3 gap-3 text-center py-2">
+                    <div>
+                      <p className="text-xs text-gray-600">Pelanggan</p>
+                      <p className="text-xl font-bold text-gray-900">{totalSelectedCustomers}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Total Bulan</p>
+                      <p className="text-xl font-bold text-gray-900">{totalMonths}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">Total Bayar</p>
+                      <p className="text-xl font-bold text-primary">{formatCurrency(totalAmount)}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Payment Form */}
+                <Card title="Detail Pembayaran Kolektif">
+                  <div className="space-y-4">
+                    <Input
+                      label="Nama Pembayar / Kolektor *"
+                      placeholder="Nama orang yang menyerahkan pembayaran"
+                      value={namaPembayar}
+                      onChange={(e) => setNamaPembayar(e.target.value)}
+                      required
+                    />
+
+                    <Select
+                      label="Metode Pembayaran"
+                      value={metodeBayar}
+                      onChange={(e) => setMetodeBayar(e.target.value as 'tunai' | 'transfer')}
+                      options={[
+                        { value: 'tunai', label: 'Tunai' },
+                        { value: 'transfer', label: 'Transfer' },
+                      ]}
+                    />
+
+                    <Input
+                      label="Catatan Tambahan (Opsional)"
+                      value={catatan}
+                      onChange={(e) => setCatatan(e.target.value)}
+                      placeholder="Catatan untuk pembayaran ini"
+                    />
+
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={handleProcessPayments}
+                      isLoading={processPaymentsMutation.isPending}
+                      disabled={!namaPembayar || totalSelectedCustomers === 0}
+                    >
+                      <Users className="w-5 h-5 mr-2" />
+                      Proses {totalSelectedCustomers} Pembayaran
+                    </Button>
+                  </div>
+                </Card>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Modal */}
+      <Modal
+        isOpen={successModalOpen}
+        onClose={() => setSuccessModalOpen(false)}
+        title="Hasil Pembayaran Kolektif"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="text-center py-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">Pembayaran Berhasil Diproses!</h3>
+          </div>
+
+          {processingResults.length > 0 && (
+            <div className="space-y-2">
+              <p className="font-semibold text-gray-900">Detail Hasil:</p>
+              {processingResults.map((result, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg flex items-center justify-between ${
+                    result.success ? 'bg-green-50' : 'bg-red-50'
+                  }`}
+                >
+                  <span className={result.success ? 'text-green-900' : 'text-red-900'}>
+                    {result.customer}
+                  </span>
+                  {result.success ? (
+                    <Badge variant="success">Berhasil</Badge>
+                  ) : (
+                    <Badge variant="danger">Gagal</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Button className="w-full mt-4" onClick={() => setSuccessModalOpen(false)}>
+            Selesai
+          </Button>
+        </div>
+      </Modal>
+    </AdminLayout>
+  )
+}

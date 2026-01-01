@@ -1,0 +1,279 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142.1 76.2% 36.3%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    font-size: 90%;
+    /* Membuat tampilan lebih compact tapi tetap terbaca */
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+/* Custom utilities untuk border dan card yang lebih terlihat */
+@layer components {
+  .card-enhanced {
+    @apply border-2 border-gray-300 shadow-md;
+  }
+
+  .card-enhanced:hover {
+    @apply border-gray-400 shadow-lg;
+  }
+
+  .input-enhanced {
+    @apply border-2 border-gray-300;
+  }
+
+  .input-enhanced:focus {
+    @apply border-primary ring-2 ring-primary ring-opacity-20;
+  }
+}
+
+/* Print Styles */
+@media print {
+
+  /* F4 Paper Size (215mm x 330mm) */
+  @page {
+    size: 215mm 330mm;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print\:block,
+  .print\:block * {
+    visibility: visible;
+  }
+
+  .print\:block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Remove backgrounds for printing */
+  * {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Keep specific backgrounds */
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-yellow-50,
+  .bg-primary {
+    background: #22c55e !important;
+    color: white !important;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-after: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-avoid {
+    page-break-inside: avoid;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee-reverse {
+  animation: marquee-reverse 20s linear infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.text-stroke-1 {
+  -webkit-text-stroke: 1px transparent;
+}
+
+.text-stroke-2 {
+  -webkit-text-stroke: 2px transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+@keyframes float-bob-y {
+  0% {
+    transform: translateY(-30px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes float-bob-x {
+  0% {
+    transform: translateX(-30px);
+  }
+
+  50% {
+    transform: translateX(-10px);
+  }
+
+  100% {
+    transform: translateX(-30px);
+  }
+}
+
+/* Digtek specific animations */
+@keyframes rotateme {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-float-bob-y {
+  animation: float-bob-y 4s linear infinite;
+}
+
+.animate-float-bob-x {
+  animation: float-bob-x 4s linear infinite;
+}
+
+.animate-rotateme {
+  animation: rotateme 20s linear infinite;
+}
+
+/* Process Icon Image Animation (replacing span animation) */
+.process__icon img {
+  -webkit-transition: all 500ms linear;
+  transition: all 500ms linear;
+  -webkit-transition-delay: 0.1s;
+  transition-delay: 0.1s;
+  -webkit-transform: scale(1) rotateY(0deg);
+  transform: scale(1) rotateY(0deg);
+  z-index: 2;
+  /* Increased z-index to match replaced code */
+}
+
+.process__single:hover .process__icon img {
+  -webkit-transform: scale(0.9) rotateY(360deg);
+  transform: scale(0.9) rotateY(360deg);
+}
+
+/* Services Two Icon Image Animation */
+.services-two__icon img {
+  -webkit-transition: all 500ms linear;
+  transition: all 500ms linear;
+  -webkit-transition-delay: 0.1s;
+  transition-delay: 0.1s;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+}
+
+.services-two__single:hover .services-two__icon img {
+  -webkit-transform: scale(0.9);
+  transform: scale(0.9);
+}
