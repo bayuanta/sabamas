@@ -342,9 +342,9 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               )}
             </Button>
 
-            {/* <Button variant="danger" onClick={() => setDeleteModalOpen(true)} className="shadow-sm">
+            <Button variant="danger" onClick={() => setDeleteModalOpen(true)} className="shadow-sm">
               <Trash2 className="w-5 h-5" />
-            </Button> */}
+            </Button>
           </div>
         </div>
 
