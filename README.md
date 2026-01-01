@@ -70,12 +70,19 @@ npm install
 
 # 2. Setup Environment Variables
 cp .env.example .env
-# Edit .env jika perlu (biasanya default sudah oke untuk SQLite)
-# nano .env
+nano .env
+
+# ==========================================
+# PENTING: ISI DENGAN KONEKSI SUPABASE ANDA !
+# ==========================================
+# DATABASE_URL="postgresql://postgres.[id]:[pass]@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+# DIRECT_URL="postgresql://postgres.[id]:[pass]@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres"
+#
+# Simpan: Ctrl+O, Enter, Ctrl+X
 
 # 3. Setup Database (Schema)
+# Karena sudah migrate di laptop, cukup generate client saja
 npx prisma generate
-npx prisma migrate deploy
 
 # 4. Build Backend
 npm run build
