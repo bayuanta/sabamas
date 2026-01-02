@@ -1,0 +1,41 @@
+# Panduan Manual Migration - Fitur Cicilan
+
+## Langkah 1: Generate Prisma Client
+```bash
+cd backend
+npx prisma generate
+```
+
+## Langkah 2: Buat Migration
+```bash
+npx prisma migrate dev --name add_partial_payment
+```
+
+## Langkah 3: Restart Backend
+```bash
+npm run start:dev
+```
+
+## Testing API
+
+### Test Create Partial Payment
+POST http://localhost:3000/api/payments
+```json
+{
+  "customer_id": "uuid-customer",
+  "bulan_dibayar": ["2026-01"],
+  "jumlah_bayar": 20000,
+  "metode_bayar": "tunai",
+  "is_partial": true
+}
+```
+
+### Test Get Partial Payments
+GET http://localhost:3000/api/payments/partial/:customerId
+
+## Checklist
+- [ ] Prisma generate berhasil
+- [ ] Migration berhasil
+- [ ] Tabel partial_payments ada
+- [ ] Backend running
+- [ ] API test berhasil

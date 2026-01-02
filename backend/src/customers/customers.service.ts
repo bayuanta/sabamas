@@ -134,6 +134,9 @@ export class CustomersService {
         tarifHistories: {
           orderBy: { bulan_berlaku: 'desc' },
         },
+        partialPayments: {
+          orderBy: { bulan_tagihan: 'desc' },
+        },
         customerAccess: true,
       },
     });
@@ -145,9 +148,16 @@ export class CustomersService {
     // Calculate detailed arrears
     const arrears = await this.arrearsCalculator.calculateArrears(customer.id);
 
+    // Parse partial payment JSON fields
+    const partialPayments = customer.partialPayments.map(pp => ({
+      ...pp,
+      payment_ids: JSON.parse(pp.payment_ids),
+    }));
+
     return {
       ...customer,
       arrears,
+      partialPayments,
     };
   }
 

@@ -38,6 +38,7 @@ export class ArrearsCalculatorService {
       where: { id: customerId },
       include: {
         payments: true,
+        partialPayments: true, // Include partial payments
         statusHistories: {
           orderBy: { tanggal_mulai: 'asc' },
         },
@@ -48,21 +49,48 @@ export class ArrearsCalculatorService {
       throw new Error('Customer not found');
     }
 
+
+
     // Get all months from tanggal_bergabung to current month
     const startDate = new Date(customer.tanggal_bergabung);
     const currentDate = TimezoneUtil.nowWIB();
-    const allMonths = TimezoneUtil.getMonthsBetween(startDate, currentDate);
+    const standardMonths = TimezoneUtil.getMonthsBetween(startDate, currentDate);
+    const allMonthsSet = new Set(standardMonths);
 
-    // Get paid months from payments
+    // Get fully paid months and Map Partial Payments
     const paidMonths = new Set<string>();
+    const partialPaymentMap = new Map<string, number>();
+
+    // Process Partial Payments first
+    if (customer.partialPayments) {
+      for (const pp of customer.partialPayments) {
+        if (pp.sisa_tagihan > 0) {
+          partialPaymentMap.set(pp.bulan_tagihan, pp.sisa_tagihan);
+          // CRITICAL FIX: Ensure this month is considered even if before join date
+          allMonthsSet.add(pp.bulan_tagihan);
+        } else {
+          paidMonths.add(pp.bulan_tagihan);
+        }
+      }
+
+    }
+
+    // Convert back to sorted array for processing
+    const allMonths = Array.from(allMonthsSet).sort();
+
+    // Process Regular Payments
     for (const payment of customer.payments) {
       const months = JSON.parse(payment.bulan_dibayar) as string[];
       for (const month of months) {
-        paidMonths.add(month);
+        // Only mark as fully paid if it's NOT a partial payment with remaining balance
+        if (!partialPaymentMap.has(month)) {
+          paidMonths.add(month);
+        }
       }
     }
 
     // Filter unpaid months AND only count months where customer was active
+    // Also include months that are partially paid (in partialPaymentMap)
     const unpaidMonths = allMonths.filter(month => {
       // Don't include future months
       const monthDate = this.parseMonthString(month);
@@ -70,7 +98,12 @@ export class ArrearsCalculatorService {
         return false;
       }
 
-      // Don't include paid months
+      // If it exists in Partial Payment Map (has remaining balance), ALWAYS include it
+      if (partialPaymentMap.has(month)) {
+        return true;
+      }
+
+      // Don't include fully paid months
       if (paidMonths.has(month)) {
         return false;
       }
@@ -85,6 +118,20 @@ export class ArrearsCalculatorService {
     let totalArrears = 0;
 
     for (const month of unpaidMonths) {
+      // Check if it's a partial payment month
+      if (partialPaymentMap.has(month)) {
+        const remainingAmount = partialPaymentMap.get(month) || 0;
+        arrearDetails.push({
+          month,
+          amount: remainingAmount,
+          source: 'history', // Consider it historical data
+          details: `Sisa Cicilan (${remainingAmount})`,
+        });
+        totalArrears += remainingAmount;
+        continue;
+      }
+
+      // Regular full month arrear calculation
       const tariff = await this.tariffCalculator.getTariffForMonth(customerId, month);
 
       if (tariff.amount > 0) {
@@ -98,13 +145,16 @@ export class ArrearsCalculatorService {
       }
     }
 
-    return {
+    const result = {
       customerId: customer.id,
       customerName: customer.nama,
       totalArrears,
       arrearMonths: arrearDetails,
       totalMonths: arrearDetails.length,
     };
+
+
+    return result;
   }
 
   /**

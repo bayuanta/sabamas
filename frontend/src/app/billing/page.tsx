@@ -35,6 +35,11 @@ function BillingContent() {
   const [paymentResult, setPaymentResult] = useState<any>(null)
   const [showFutureMonths, setShowFutureMonths] = useState(false)
 
+  // Partial Payment (Cicilan) states
+  const [isPartialMode, setIsPartialMode] = useState(false)
+  const [partialAmount, setPartialAmount] = useState<number>(0)
+  const [partialPaymentInfo, setPartialPaymentInfo] = useState<any[]>([])
+
   // Fetch wilayah list
   const { data: wilayahData } = useQuery({
     queryKey: ['wilayah-list'],
@@ -69,29 +74,84 @@ function BillingContent() {
       return data
     },
     enabled: !!selectedCustomer,
+    staleTime: 0, // Disable cache
+    gcTime: 0, // Disable garbage collection time (was cacheTime)
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
+  })
+
+  // Debug log
+  useEffect(() => {
+    if (customerDetail?.arrears) {
+      console.log('Customer Arrears Debug:', customerDetail.arrears)
+    }
+  }, [customerDetail])
+
+  // Get partial payments for customer
+  const { data: partialPayments } = useQuery({
+    queryKey: ['partial-payments', selectedCustomer?.id],
+    queryFn: async () => {
+      const { data } = await paymentsApi.getPartialPayments(selectedCustomer.id)
+      return data
+    },
+    enabled: !!selectedCustomer,
   })
 
   // Payment mutation
   const paymentMutation = useMutation({
     mutationFn: (data: any) => paymentsApi.create(data),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       // Ensure customer_nama is present for WhatsApp message
       const result = {
         ...response.data,
         customer_nama: response.data.customer_nama || selectedCustomer?.nama
       }
       setPaymentResult(result)
+
+      // Fetch partial payment info if this is a partial payment
+      if (result.is_partial && selectedCustomer) {
+        try {
+          const { data: partialData } = await paymentsApi.getPartialPayments(selectedCustomer.id)
+
+          // Filter only months that were just paid
+          const paidMonths = Array.isArray(result.bulan_dibayar)
+            ? result.bulan_dibayar
+            : JSON.parse(result.bulan_dibayar)
+
+          const relevantPartials = partialData.filter((p: any) =>
+            paidMonths.includes(p.bulan_tagihan)
+          ).map((p: any) => ({
+            ...p,
+            cicilan_ke: p.payment_ids.length
+          }))
+
+          setPartialPaymentInfo(relevantPartials)
+        } catch (error) {
+          console.error('Failed to fetch partial payment info:', error)
+          setPartialPaymentInfo([])
+        }
+      } else {
+        setPartialPaymentInfo([])
+      }
+
       setSuccessModalOpen(true)
       setSelectedCustomer(null)
       setSelectedMonths([])
       setCatatan('')
+      setDiskonNominal(0)
+      setIsPartialMode(false)
+      setPartialAmount(0)
+
       // Invalidate all related queries to ensure UI updates everywhere
       // Invalidate only essential queries for faster UI response
       queryClient.invalidateQueries({ queryKey: ['payments'] })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['customer'] })
+      queryClient.invalidateQueries({ queryKey: ['customer'] }) // Matches all customer details
+      queryClient.invalidateQueries({ queryKey: ['customers'] }) // Matches customer lists
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       queryClient.invalidateQueries({ queryKey: ['customers-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['partial-payments'] })
+      queryClient.invalidateQueries({ queryKey: ['arrears-report'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-portal'] })
 
       // Invalidate search results only if needed (optional, can be removed for max speed)
       queryClient.invalidateQueries({ queryKey: ['customers-search'] })
@@ -206,16 +266,76 @@ function BillingContent() {
     return Math.max(0, subtotal - diskonNominal)
   }
 
+  // Calculate payment distribution for preview
+  const calculateDistribution = () => {
+    if (!isPartialMode || !customerDetail) return []
+
+    const sortedMonths = [...selectedMonths].sort()
+    let remainingAmount = partialAmount
+    const distribution: Array<{
+      month: string
+      amount: number
+      total: number
+      status: 'lunas' | 'cicilan'
+      sisa: number
+    }> = []
+
+    for (let i = 0; i < sortedMonths.length; i++) {
+      const month = sortedMonths[i]
+      const isLastMonth = i === sortedMonths.length - 1
+
+      // Get month tariff
+      const arrear = customerDetail.arrears?.details?.find((a: any) => a.month === month)
+      const monthTariff = arrear?.amount || customerDetail.tarif?.harga_per_bulan || 0
+
+      // Calculate amount for this month
+      const amountForThisMonth = isLastMonth
+        ? remainingAmount
+        : Math.min(remainingAmount, monthTariff)
+
+      const sisa = monthTariff - amountForThisMonth
+
+      if (amountForThisMonth > 0) {
+        distribution.push({
+          month,
+          amount: amountForThisMonth,
+          total: monthTariff,
+          status: sisa <= 0 ? 'lunas' : 'cicilan',
+          sisa
+        })
+      }
+
+      remainingAmount -= amountForThisMonth
+      if (remainingAmount <= 0) break
+    }
+
+    return distribution
+  }
+
   const handlePayment = () => {
     if (!selectedCustomer || selectedMonths.length === 0) return
+
+    // Validate partial payment
+    if (isPartialMode) {
+      if (partialAmount <= 0) {
+        alert('Jumlah pembayaran harus lebih dari 0')
+        return
+      }
+      const totalTagihan = calculateTotal()
+      if (partialAmount > totalTagihan) {
+        alert('Jumlah pembayaran tidak boleh melebihi total tagihan')
+        return
+      }
+    }
 
     const paymentData = {
       customer_id: selectedCustomer.id,
       bulan_dibayar: selectedMonths,
-      jumlah_bayar: calculateTotal(),
+      jumlah_bayar: isPartialMode ? partialAmount : calculateTotal(),
       metode_bayar: metodeBayar,
       catatan: catatan || undefined,
       diskon_nominal: diskonNominal > 0 ? diskonNominal : undefined,
+      is_partial: isPartialMode,
     }
 
     paymentMutation.mutate(paymentData)
@@ -484,6 +604,84 @@ function BillingContent() {
                           </div>
                         </div>
 
+                        {/* Partial Payments (Cicilan) */}
+                        {partialPayments && partialPayments.length > 0 && (
+                          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                            <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-yellow-50">
+                              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <DollarSign className="w-5 h-5 text-orange-500" />
+                                Pembayaran Cicilan
+                              </h3>
+                              <p className="text-xs text-gray-600 ml-7 mt-0.5">
+                                {partialPayments.filter((p: any) => p.status === 'cicilan').length} bulan sedang dicicil
+                              </p>
+                            </div>
+
+                            <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                              {partialPayments.map((partial: any) => {
+                                const isSelected = selectedMonths.includes(partial.bulan_tagihan)
+                                const progress = (partial.jumlah_terbayar / partial.jumlah_tagihan) * 100
+                                const isLunas = partial.status === 'lunas'
+
+                                return (
+                                  <div
+                                    key={partial.id}
+                                    onClick={() => !isLunas && toggleMonth(partial.bulan_tagihan)}
+                                    className={`p-3 rounded-xl border-2 transition-all duration-200 ${isLunas
+                                      ? 'border-green-200 bg-green-50 opacity-60 cursor-not-allowed'
+                                      : isSelected
+                                        ? 'border-orange-500 bg-orange-50/50 cursor-pointer'
+                                        : 'border-orange-200 hover:border-orange-400 hover:bg-orange-50/30 cursor-pointer'
+                                      }`}
+                                  >
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <p className="font-bold text-gray-900 text-sm">{formatMonth(partial.bulan_tagihan)}</p>
+                                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${isLunas
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-orange-100 text-orange-700'
+                                            }`}>
+                                            {isLunas ? '✓ Lunas' : `Cicilan ${partial.payment_ids.length}x`}
+                                          </span>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <div className="flex justify-between text-xs">
+                                            <span className="text-gray-600">Terbayar:</span>
+                                            <span className="font-bold text-orange-700">
+                                              {formatCurrency(partial.jumlah_terbayar)}
+                                            </span>
+                                          </div>
+                                          {!isLunas && (
+                                            <div className="flex justify-between text-xs">
+                                              <span className="text-gray-600">Sisa:</span>
+                                              <span className="font-bold text-red-600">
+                                                {formatCurrency(partial.sisa_tagihan)}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Progress Bar */}
+                                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                      <div
+                                        className={`h-full transition-all duration-500 ${isLunas ? 'bg-green-500' : 'bg-orange-500'
+                                          }`}
+                                        style={{ width: `${progress}%` }}
+                                      />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 mt-1 text-right">
+                                      {progress.toFixed(0)}% dari {formatCurrency(partial.jumlah_tagihan)}
+                                    </p>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Future Months */}
                         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                           <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
@@ -568,6 +766,106 @@ function BillingContent() {
                                 <span className="font-bold text-gray-900">{selectedMonths.length} bulan</span>
                               </div>
 
+                              {/* Partial Payment Toggle */}
+                              {selectedMonths.length >= 1 && (
+                                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 rounded-xl border-2 border-orange-200">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                                        <DollarSign className="w-5 h-5 text-white" />
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-gray-900 text-sm">Mode Pembayaran Cicilan</p>
+                                        <p className="text-xs text-gray-600">
+                                          {selectedMonths.length === 1
+                                            ? 'Bayar sebagian dari total tagihan'
+                                            : 'Kekurangan akan masuk ke bulan terakhir'
+                                          }
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        setIsPartialMode(!isPartialMode)
+                                        if (!isPartialMode) {
+                                          setPartialAmount(0)
+                                        }
+                                      }}
+                                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPartialMode ? 'bg-orange-600' : 'bg-gray-300'
+                                        }`}
+                                    >
+                                      <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPartialMode ? 'translate-x-6' : 'translate-x-1'
+                                          }`}
+                                      />
+                                    </button>
+                                  </div>
+
+                                  {isPartialMode && (
+                                    <div className="space-y-2 animate-fadeIn">
+                                      <label htmlFor="partial-amount" className="block text-xs font-medium text-gray-700">
+                                        Jumlah yang Dibayar Sekarang
+                                      </label>
+                                      <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 font-medium">Rp</span>
+                                        <input
+                                          type="number"
+                                          id="partial-amount"
+                                          name="partialAmount"
+                                          min="0"
+                                          max={calculateTotal()}
+                                          value={partialAmount || ''}
+                                          onChange={(e) => setPartialAmount(Number(e.target.value) || 0)}
+                                          placeholder="Masukkan jumlah"
+                                          className="w-full pl-10 pr-4 py-2.5 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-bold text-gray-900"
+                                        />
+                                      </div>
+                                      {partialAmount > 0 && partialAmount < calculateTotal() && (
+                                        <div className="bg-white/80 p-2 rounded-lg">
+                                          <p className="text-xs text-orange-700 font-medium">
+                                            Sisa tagihan: {formatCurrency(calculateTotal() - partialAmount)}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {partialAmount > calculateTotal() && (
+                                        <p className="text-xs text-red-600 font-medium">Jumlah melebihi total tagihan</p>
+                                      )}
+
+                                      {/* Multi-month distribution explanation */}
+                                      {selectedMonths.length > 1 && partialAmount > 0 && partialAmount < calculateTotal() && (() => {
+                                        const distribution = calculateDistribution()
+                                        return distribution.length > 0 && (
+                                          <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg space-y-2">
+                                            <p className="text-xs font-bold text-blue-900 mb-2">📋 Preview Distribusi Pembayaran:</p>
+                                            <div className="space-y-1">
+                                              {distribution.map((dist, idx) => (
+                                                <div key={idx} className="flex items-center justify-between text-xs bg-white p-2 rounded border border-blue-100">
+                                                  <div className="flex-1">
+                                                    <span className="font-medium text-gray-900">{formatMonth(dist.month)}</span>
+                                                    <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${dist.status === 'lunas'
+                                                      ? 'bg-green-100 text-green-700'
+                                                      : 'bg-orange-100 text-orange-700'
+                                                      }`}>
+                                                      {dist.status === 'lunas' ? '✓ LUNAS' : 'CICILAN'}
+                                                    </span>
+                                                  </div>
+                                                  <div className="text-right">
+                                                    <div className="font-bold text-blue-900">{formatCurrency(dist.amount)}</div>
+                                                    {dist.sisa > 0 && (
+                                                      <div className="text-[10px] text-red-600">Sisa: {formatCurrency(dist.sisa)}</div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
                               {isPrepaidPayment() && (
                                 <div className="bg-blue-50 p-3 rounded-lg flex items-start gap-3">
                                   <div className="mt-0.5">
@@ -624,9 +922,15 @@ function BillingContent() {
                                 )}
 
                                 <div className="flex justify-between items-end pt-3 border-t border-gray-200">
-                                  <span className="text-gray-900 font-bold">Total Bayar</span>
-                                  <span className="text-3xl font-extrabold text-blue-600">
-                                    {formatCurrency(calculateFinalTotal())}
+                                  <div>
+                                    <span className="text-gray-900 font-bold">Total Bayar</span>
+                                    {isPartialMode && (
+                                      <p className="text-xs text-orange-600 font-medium mt-0.5">Pembayaran Cicilan</p>
+                                    )}
+                                  </div>
+                                  <span className={`text-3xl font-extrabold ${isPartialMode ? 'text-orange-600' : 'text-blue-600'
+                                    }`}>
+                                    {formatCurrency(isPartialMode ? partialAmount : calculateFinalTotal())}
                                   </span>
                                 </div>
                               </div>
@@ -780,7 +1084,7 @@ function BillingContent() {
 
             <div className="flex justify-center pt-2">
               <ShareButton
-                message={generatePaymentWhatsAppMessage(paymentResult)}
+                message={generatePaymentWhatsAppMessage(paymentResult ? { ...paymentResult, partialPaymentInfo } : null)}
                 title="Kirim Bukti via WhatsApp"
                 defaultPhone={selectedCustomer?.nomor_telepon}
               />
@@ -802,16 +1106,19 @@ function BillingContent() {
           <PaymentReceipt
             payment={paymentResult}
             customer={customerDetail}
+            partialPaymentInfo={partialPaymentInfo}
             isThermal={false}
           />
           <PaymentReceipt
             payment={paymentResult}
             customer={customerDetail}
+            partialPaymentInfo={partialPaymentInfo}
             isThermal={true}
           />
           <PaymentReceipt
             payment={paymentResult}
             customer={customerDetail}
+            partialPaymentInfo={partialPaymentInfo}
             isCompact={true}
           />
         </>

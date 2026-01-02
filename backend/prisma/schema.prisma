@@ -34,6 +34,7 @@ model Customer {
   tarifHistories        TarifHistory[]
   tarifOverrides        TarifOverride[]
   payments              Payment[]
+  partialPayments       PartialPayment[]
   customerAccess        CustomerAccess?
   statusHistories       CustomerStatusHistory[]
 
@@ -124,6 +125,28 @@ model Payment {
   @@index([metode_bayar])
   @@index([is_deposited])
   @@map("payments")
+}
+
+// PartialPayment (Pembayaran Cicilan)
+model PartialPayment {
+  id                String   @id @default(uuid())
+  customer_id       String
+  bulan_tagihan     String   // Format: "YYYY-MM"
+  jumlah_tagihan    Float    // Total tagihan untuk bulan ini
+  jumlah_terbayar   Float    // Total yang sudah dibayar (akumulasi cicilan)
+  sisa_tagihan      Float    // Sisa yang belum dibayar
+  status            String   @default("cicilan") // "cicilan" | "lunas"
+  payment_ids       String   // JSON array of payment IDs yang terkait
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  customer          Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+
+  @@unique([customer_id, bulan_tagihan])
+  @@index([customer_id])
+  @@index([status])
+  @@map("partial_payments")
 }
 
 // Setoran (Deposit ke Bendahara)

@@ -32,6 +32,10 @@ export default function PortalTagihanPage() {
     },
     enabled: !!customerId,
     retry: 1,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   })
 
   // Get settings for logo
@@ -45,6 +49,21 @@ export default function PortalTagihanPage() {
         return null
       }
     },
+  })
+
+  // Get partial payments
+  const { data: partialPayments } = useQuery({
+    queryKey: ['portal-partial-payments', customerId],
+    queryFn: async () => {
+      if (!customerId) return []
+      const { data } = await paymentsApi.getPartialPayments(customerId)
+      return data
+    },
+    enabled: !!customerId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   })
 
   if (isLoading || !customer) {
@@ -144,11 +163,19 @@ export default function PortalTagihanPage() {
           yPos = 20
         }
 
+        const partialInfo = partialPayments?.find((p: any) => p.bulan_tagihan === arrear.month && p.sisa_tagihan > 0)
+        const details = partialInfo ? `Sisa Cicilan (Total: ${formatCurrency(partialInfo.jumlah_tagihan)})` : `(${arrear.details})`
+
         pdf.setFont('helvetica', 'bold')
         pdf.text(`${index + 1}. ${formatMonth(arrear.month)}`, 20, yPos)
         pdf.setFont('helvetica', 'normal')
         pdf.text(formatCurrency(arrear.amount), 150, yPos, { align: 'right' })
-        pdf.text(`(${arrear.details})`, 25, yPos + 5)
+
+        pdf.setFontSize(9)
+        pdf.setTextColor(100, 100, 100)
+        pdf.text(details, 25, yPos + 5)
+        pdf.setFontSize(10)
+        pdf.setTextColor(0, 0, 0)
 
         yPos += 12
       })
@@ -195,7 +222,13 @@ export default function PortalTagihanPage() {
 
     setIsSendingWhatsApp(true)
 
-    const months = customer.arrears.arrearMonths.map((a: any) => formatMonth(a.month)).join(', ')
+    const months = customer.arrears.arrearMonths.map((a: any) => {
+      const partialInfo = partialPayments?.find((p: any) => p.bulan_tagihan === a.month && p.sisa_tagihan > 0)
+      return partialInfo
+        ? `${formatMonth(a.month)} (Sisa Cicilan)`
+        : formatMonth(a.month)
+    }).join(', ')
+
     const message = encodeURIComponent(
       `Halo, saya ingin melakukan pembayaran tagihan:\n\n` +
       `Nama: ${customer.nama}\n` +
@@ -279,26 +312,60 @@ export default function PortalTagihanPage() {
               </div>
 
               <div className="space-y-4">
-                {customer.arrears.arrearMonths.map((arrear: any, index: number) => (
-                  <div key={index} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-bold text-lg text-gray-900">{formatMonth(arrear.month)}</p>
-                        <p className="text-sm text-gray-500">{arrear.details}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="warning">{arrear.source}</Badge>
+                {customer.arrears.arrearMonths.map((arrear: any, index: number) => {
+                  const partialInfo = partialPayments?.find((p: any) => p.bulan_tagihan === arrear.month)
+                  const isPartial = !!partialInfo && partialInfo.sisa_tagihan > 0
+
+                  return (
+                    <div key={index} className={`bg-white p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${isPartial ? 'border-orange-200 bg-orange-50/30' : 'border-gray-100'}`}>
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0 ${isPartial ? 'bg-orange-100 text-orange-600' : 'bg-red-50 text-red-600'}`}>
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-lg text-gray-900">{formatMonth(arrear.month)}</p>
+                            {isPartial && (
+                              <Badge variant="warning" className="text-[10px] px-2 py-0.5">
+                                CICILAN KE-{(partialInfo.payment_ids?.length || 0) + 1}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {isPartial ? (
+                            <div className="mt-2 space-y-2 max-w-sm">
+                              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Terbayar: {formatCurrency(partialInfo.jumlah_terbayar)}</span>
+                                <span>Total: {formatCurrency(partialInfo.jumlah_tagihan)}</span>
+                              </div>
+                              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-orange-500 rounded-full transition-all duration-500"
+                                  style={{ width: `${(partialInfo.jumlah_terbayar / partialInfo.jumlah_tagihan) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-500">{arrear.details}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="warning">{arrear.source}</Badge>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className={`font-bold text-xl ${isPartial ? 'text-orange-600' : 'text-red-600'}`}>
+                          {formatCurrency(arrear.amount)}
+                        </p>
+                        <p className={`text-xs font-medium ${isPartial ? 'text-orange-400' : 'text-red-400'}`}>
+                          {isPartial ? 'Sisa Cicilan' : 'Belum Dibayar'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-xl text-red-600">{formatCurrency(arrear.amount)}</p>
-                      <p className="text-xs text-red-400 font-medium">Belum Dibayar</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* Actions */}

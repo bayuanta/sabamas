@@ -1,0 +1,55 @@
+  /**
+   * Get partial payments for a customer
+   */
+  async getPartialPayments(customerId: string) {
+    const partialPayments = await this.prisma.partialPayment.findMany({
+      where: { customer_id: customerId },
+      orderBy: { bulan_tagihan: 'desc' },
+    });
+
+    return partialPayments.map(pp => ({
+      ...pp,
+      payment_ids: JSON.parse(pp.payment_ids),
+    }));
+  }
+
+  /**
+   * Get partial payment detail for a specific month
+   */
+  async getPartialPaymentDetail(customerId: string, bulanTagihan: string) {
+    const partialPayment = await this.prisma.partialPayment.findUnique({
+      where: {
+        customer_id_bulan_tagihan: {
+          customer_id: customerId,
+          bulan_tagihan: bulanTagihan,
+        },
+      },
+      include: {
+        customer: {
+          select: { id: true, nama: true, wilayah: true },
+        },
+      },
+    });
+
+    if (!partialPayment) {
+      return null;
+    }
+
+    // Get related payments
+    const paymentIds = JSON.parse(partialPayment.payment_ids) as string[];
+    const relatedPayments = await this.prisma.payment.findMany({
+      where: {
+        id: { in: paymentIds },
+      },
+      orderBy: { tanggal_bayar: 'asc' },
+    });
+
+    return {
+      ...partialPayment,
+      payment_ids: paymentIds,
+      payments: relatedPayments.map(p => ({
+        ...p,
+        bulan_dibayar: JSON.parse(p.bulan_dibayar),
+      })),
+    };
+  }

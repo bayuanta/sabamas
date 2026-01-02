@@ -148,6 +148,11 @@ export const paymentsApi = {
   create: (data: any) => api.post('/payments', data),
   cancel: (id: string) => api.delete(`/payments/${id}`),
   getUndeposited: () => api.get('/payments/undeposited'),
+
+  // Partial Payments (Cicilan)
+  getPartialPayments: (customerId: string) => api.get(`/payments/partial/${customerId}`),
+  getPartialPaymentDetail: (customerId: string, bulanTagihan: string) =>
+    api.get(`/payments/partial/${customerId}/${bulanTagihan}`),
 }
 
 // Deposits API

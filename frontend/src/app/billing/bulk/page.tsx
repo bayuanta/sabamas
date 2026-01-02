@@ -79,9 +79,9 @@ export default function BulkBillingPage() {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       queryClient.invalidateQueries({ queryKey: ['customers-bulk'] })
       queryClient.invalidateQueries({ queryKey: ['payments'] })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['customer'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-portal'] })
     },
   })
 

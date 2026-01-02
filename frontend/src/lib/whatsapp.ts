@@ -8,10 +8,34 @@ interface PaymentData {
   metode_bayar: string
   catatan?: string
   id: string
+  partialPaymentInfo?: Array<{
+    bulan_tagihan: string
+    jumlah_tagihan: number
+    jumlah_terbayar: number
+    sisa_tagihan: number
+    status: string
+    payment_ids: string[]
+  }>
 }
 
 export function generatePaymentWhatsAppMessage(payment: PaymentData | null): string {
   if (!payment) return ''
+
+  // Check if there are any partial payments with remaining balance
+  const cicilanMonths = payment.partialPaymentInfo?.filter(p => p.sisa_tagihan > 0) || []
+
+  // Defensive check: ensure bulan_dibayar is an array
+  let bulanDibayar: string[] = []
+  if (Array.isArray(payment.bulan_dibayar)) {
+    bulanDibayar = payment.bulan_dibayar
+  } else if (typeof payment.bulan_dibayar === 'string') {
+    try {
+      bulanDibayar = JSON.parse(payment.bulan_dibayar)
+    } catch (e) {
+      console.error('Error parsing bulan_dibayar', e)
+    }
+  }
+
   const message = `
 *BUKTI PEMBAYARAN SABAMAS*
 ━━━━━━━━━━━━━━━━━━━
@@ -23,15 +47,21 @@ export function generatePaymentWhatsAppMessage(payment: PaymentData | null): str
 ━━━━━━━━━━━━━━━━━━━
 *RINCIAN PEMBAYARAN*
 
-${payment.bulan_dibayar.map((month, index) => `${index + 1}. ${formatMonth(month)}`).join('\n')}
+${bulanDibayar.map((month, index) => `${index + 1}. ${formatMonth(month)}`).join('\n')}
 
 ━━━━━━━━━━━━━━━━━━━
-*Total Bulan:* ${payment.bulan_dibayar.length}
+*Total Bulan:* ${bulanDibayar.length}
 *Metode:* ${payment.metode_bayar.toUpperCase()}
 *TOTAL BAYAR:* ${formatCurrency(payment.jumlah_bayar)}
 
-${payment.catatan ? `*Catatan:* ${payment.catatan}\n` : ''}
-━━━━━━━━━━━━━━━━━━━
+${payment.catatan ? `*Catatan:* ${payment.catatan}\n` : ''}${cicilanMonths.length > 0 ? `━━━━━━━━━━━━━━━━━━━
+⚠️ *SISA TAGIHAN*
+
+${cicilanMonths.map(info =>
+    `${formatMonth(info.bulan_tagihan)} (Cicilan ${info.payment_ids.length}x)\nSisa: ${formatCurrency(info.sisa_tagihan)}`
+  ).join('\n\n')}
+
+` : ''}━━━━━━━━━━━━━━━━━━━
 
 Terima kasih atas pembayaran Anda! 🙏
 

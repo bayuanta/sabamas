@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import AdminLayout from '@/components/AdminLayout'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { customersApi, tariffsApi } from '@/lib/api'
+import { customersApi, tariffsApi, paymentsApi } from '@/lib/api'
 import { formatCurrency, formatDateTime, formatMonth } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
@@ -47,6 +47,16 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
       const { data } = await tariffsApi.getCategories()
       return data
     },
+  })
+
+  // Fetch partial payments
+  const { data: partialPayments } = useQuery({
+    queryKey: ['partial-payments', params.id],
+    queryFn: async () => {
+      const { data } = await paymentsApi.getPartialPayments(params.id)
+      return data
+    },
+    enabled: !!params.id
   })
 
   const deleteMutation = useMutation({
@@ -467,6 +477,81 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                   </div>
                   <p className="text-gray-900 font-medium">Tidak ada tunggakan</p>
                   <p className="text-sm text-gray-500 mt-1">Pelanggan ini rajin membayar tagihan!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Partial Payments History */}
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-100 bg-orange-50/50 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <div className="w-5 h-5 rounded bg-orange-100 flex items-center justify-center">
+                    <span className="text-orange-600 font-bold text-xs">$</span>
+                  </div>
+                  Riwayat Cicilan
+                </h3>
+                {partialPayments && partialPayments.length > 0 && (
+                  <span className="text-sm font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+                    {partialPayments.length} Riwayat
+                  </span>
+                )}
+              </div>
+
+              {partialPayments && partialPayments.length > 0 ? (
+                <div className="divide-y divide-gray-100">
+                  {partialPayments.map((partial: any) => {
+                    const paymentIds = partial.payment_ids || []
+                    return (
+                      <div key={partial.id} className="p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-gray-900">{formatMonth(partial.bulan_tagihan)}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${partial.status === 'lunas'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-orange-100 text-orange-700'
+                              }`}>
+                              {partial.status}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500 font-medium">
+                            {paymentIds.length}x Pembayaran
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                          <div className="bg-gray-50 p-2 rounded border border-gray-100">
+                            <p className="text-gray-500 mb-0.5">Total Tagihan</p>
+                            <p className="font-bold text-gray-900">{formatCurrency(partial.jumlah_tagihan)}</p>
+                          </div>
+                          <div className="bg-green-50 p-2 rounded border border-green-100">
+                            <p className="text-green-600 mb-0.5">Terbayar</p>
+                            <p className="font-bold text-green-700">{formatCurrency(partial.jumlah_terbayar)}</p>
+                          </div>
+                          <div className={`p-2 rounded border ${partial.sisa_tagihan > 0
+                            ? 'bg-red-50 border-red-100'
+                            : 'bg-gray-50 border-gray-100'
+                            }`}>
+                            <p className={`${partial.sisa_tagihan > 0 ? 'text-red-600' : 'text-gray-500'} mb-0.5`}>Sisa</p>
+                            <p className={`font-bold ${partial.sisa_tagihan > 0 ? 'text-red-700' : 'text-gray-900'}`}>
+                              {formatCurrency(partial.sisa_tagihan)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${partial.status === 'lunas' ? 'bg-green-500' : 'bg-orange-500'}`}
+                            style={{ width: `${Math.min(100, (partial.jumlah_terbayar / partial.jumlah_tagihan) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-gray-500 text-sm">Belum ada riwayat cicilan</p>
                 </div>
               )}
             </div>

@@ -16,6 +16,7 @@ interface PaymentReceiptProps {
         catatan?: string
         tanggal_bayar?: string
         month_breakdown?: Record<string, { amount: number; source: string; details?: string }> | string
+        is_partial?: boolean  // Flag pembayaran cicilan
     }
     customer?: {
         nama?: string
@@ -23,12 +24,21 @@ interface PaymentReceiptProps {
         wilayah?: string
         nomor_telepon?: string
     }
+    partialPaymentInfo?: {  // Info cicilan untuk bulan yang dibayar
+        bulan_tagihan: string
+        jumlah_tagihan: number
+        jumlah_terbayar: number
+        sisa_tagihan: number
+        status: string
+        payment_ids: string[]
+        cicilan_ke?: number  // Cicilan ke berapa
+    }[]
     isThermal?: boolean
     isCompact?: boolean  // New: 1/3 F4 format for paper saving
     customId?: string  // Custom ID for PDF generation
 }
 
-export default function PaymentReceipt({ payment, customer, isThermal = false, isCompact = false, customId }: PaymentReceiptProps) {
+export default function PaymentReceipt({ payment, customer, partialPaymentInfo, isThermal = false, isCompact = false, customId }: PaymentReceiptProps) {
     // Get settings for logo
     const { data: settings } = useQuery({
         queryKey: ['settings'],
@@ -59,6 +69,32 @@ export default function PaymentReceipt({ payment, customer, isThermal = false, i
         }
         // Fallback to equal distribution if no breakdown available
         return payment.jumlah_bayar / paidMonths.length
+    }
+
+    // Helper to get partial payment info for a month
+    const getPartialInfo = (month: string) => {
+        return partialPaymentInfo?.find(p => p.bulan_tagihan === month)
+    }
+
+    // Check if this is a partial payment
+    const isPartialPayment = payment.is_partial || (partialPaymentInfo && partialPaymentInfo.length > 0)
+
+    // Get total tagihan for partial payment
+    const getTotalTagihan = () => {
+        if (!partialPaymentInfo || partialPaymentInfo.length === 0) return 0
+        return partialPaymentInfo.reduce((sum, p) => sum + p.jumlah_tagihan, 0)
+    }
+
+    // Get total terbayar for partial payment
+    const getTotalTerbayar = () => {
+        if (!partialPaymentInfo || partialPaymentInfo.length === 0) return 0
+        return partialPaymentInfo.reduce((sum, p) => sum + p.jumlah_terbayar, 0)
+    }
+
+    // Get total sisa for partial payment
+    const getTotalSisa = () => {
+        if (!partialPaymentInfo || partialPaymentInfo.length === 0) return 0
+        return partialPaymentInfo.reduce((sum, p) => sum + p.sisa_tagihan, 0)
     }
 
     const currentDate = new Date()
@@ -198,6 +234,31 @@ export default function PaymentReceipt({ payment, customer, isThermal = false, i
                         </tr>
                     </tbody>
                 </table>
+
+
+                {/* Partial Payment Info - Simplified */}
+                {isPartialPayment && partialPaymentInfo && partialPaymentInfo.length > 0 && (() => {
+                    // Only show months with remaining balance (cicilan)
+                    const cicilanMonths = partialPaymentInfo.filter(p => p.sisa_tagihan > 0)
+                    if (cicilanMonths.length === 0) return null
+
+                    return (
+                        <>
+                            <div style={{ borderTop: '1px dashed #000', margin: '1mm 0' }}></div>
+                            {cicilanMonths.map((info, idx) => (
+                                <div key={idx} style={{ fontSize: '6px', marginBottom: '0.5mm' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                                        <span>{formatMonth(info.bulan_tagihan)} (Cicilan {info.payment_ids.length}x)</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3mm' }}>
+                                        <span>Sisa Tagihan:</span>
+                                        <span style={{ fontWeight: 'bold' }}>{formatCurrency(info.sisa_tagihan)}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </>
+                    )
+                })()}
 
                 {payment.catatan && (
                     <>
@@ -496,6 +557,24 @@ export default function PaymentReceipt({ payment, customer, isThermal = false, i
                     </div>
                 )}
 
+                {/* Partial Payment Info - Minimalist */}
+                {isPartialPayment && partialPaymentInfo && partialPaymentInfo.length > 0 && (() => {
+                    const cicilanMonths = partialPaymentInfo.filter(p => p.sisa_tagihan > 0)
+                    if (cicilanMonths.length === 0) return null
+
+                    return (
+                        <div style={{ marginTop: '8px', padding: '6px 8px', backgroundColor: '#fffbeb', border: '1px solid #f97316', borderRadius: '3px' }}>
+                            <div style={{ fontSize: '8pt', fontWeight: 'bold', color: '#c2410c', marginBottom: '4px' }}>⚠️ Sisa Tagihan</div>
+                            {cicilanMonths.map((info, idx) => (
+                                <div key={idx} style={{ fontSize: '8pt', display: 'flex', justifyContent: 'space-between', marginBottom: idx < cicilanMonths.length - 1 ? '3px' : '0' }}>
+                                    <span>{formatMonth(info.bulan_tagihan)} (Cicilan {info.payment_ids.length}x)</span>
+                                    <span style={{ fontWeight: 'bold', color: '#dc2626' }}>{formatCurrency(info.sisa_tagihan)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )
+                })()}
+
                 {/* Compact Footer without Signature to save space */}
                 <div style={{
                     marginTop: '2mm',
@@ -699,6 +778,48 @@ export default function PaymentReceipt({ payment, customer, isThermal = false, i
                     Terbilang: # {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(payment.jumlah_bayar).replace('Rp', '').trim()} #
                 </div>
             </div>
+
+            {/* Partial Payment Info Box - Simplified */}
+            {isPartialPayment && partialPaymentInfo && partialPaymentInfo.length > 0 && (() => {
+                // Only show months with remaining balance
+                const cicilanMonths = partialPaymentInfo.filter(p => p.sisa_tagihan > 0)
+                if (cicilanMonths.length === 0) return null
+
+                return (
+                    <div style={{
+                        marginBottom: '20px',
+                        padding: '10px 15px',
+                        border: '1px solid #f97316',
+                        backgroundColor: '#fffbeb',
+                        borderRadius: '4px'
+                    }}>
+                        <div style={{
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            color: '#c2410c',
+                            marginBottom: '8px'
+                        }}>⚠️ SISA TAGIHAN CICILAN</div>
+
+                        {cicilanMonths.map((info, idx) => (
+                            <div key={idx} style={{
+                                fontSize: '11px',
+                                marginBottom: idx < cicilanMonths.length - 1 ? '6px' : '0',
+                                paddingBottom: idx < cicilanMonths.length - 1 ? '6px' : '0',
+                                borderBottom: idx < cicilanMonths.length - 1 ? '1px dashed #fed7aa' : 'none'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 'bold' }}>
+                                        {formatMonth(info.bulan_tagihan)} (Cicilan {info.payment_ids.length}x)
+                                    </span>
+                                    <span style={{ fontWeight: 'bold', color: '#dc2626' }}>
+                                        Sisa: {formatCurrency(info.sisa_tagihan)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
+            })()}
 
             {/* Signature */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '50px' }}>

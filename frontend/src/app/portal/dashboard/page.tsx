@@ -2,8 +2,8 @@
 
 import PortalLayout from '@/components/PortalLayout'
 import { useQuery } from '@tanstack/react-query'
-import { customersApi } from '@/lib/api'
-import { formatCurrency } from '@/lib/utils'
+import { customersApi, paymentsApi } from '@/lib/api'
+import { formatCurrency, formatMonth } from '@/lib/utils'
 import Link from 'next/link'
 import {
   AlertCircle,
@@ -39,6 +39,24 @@ export default function PortalDashboardPage() {
     },
     enabled: !!customerId,
     retry: 1,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
+  })
+
+  // Fetch partial payments
+  const { data: partialPayments } = useQuery({
+    queryKey: ['portal-partial-payments', customerId],
+    queryFn: async () => {
+      const { data } = await paymentsApi.getPartialPayments(customerId)
+      return data
+    },
+    enabled: !!customerId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   })
 
   // Loading Skeleton
@@ -82,6 +100,55 @@ export default function PortalDashboardPage() {
                 Bayar Sekarang
               </button>
             </Link>
+          </div>
+        )}
+
+        {/* Partial Payment Alert */}
+        {partialPayments && partialPayments.some((p: any) => p.sisa_tagihan > 0) && (
+          <div className="rounded-2xl bg-orange-50 border border-orange-100 p-6 shadow-sm">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Sisa Tagihan Cicilan</h3>
+                <p className="text-gray-600 mt-1">
+                  Anda memiliki sisa tagihan cicilan yang harus diselesaikan.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {partialPayments.filter((p: any) => p.sisa_tagihan > 0).map((partial: any) => {
+                const paymentIds = partial.payment_ids || []
+                return (
+                  <div key={partial.id} className="bg-white p-4 rounded-xl border border-orange-200/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-gray-900">{formatMonth(partial.bulan_tagihan)}</span>
+                        <span className="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">
+                          Cicilan ke-{paymentIds.length}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Total: {formatCurrency(partial.jumlah_tagihan)} • Terbayar: {formatCurrency(partial.jumlah_terbayar)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="flex-1 sm:flex-none">
+                        <p className="text-xs text-gray-400 font-bold uppercase">Sisa Tagihan</p>
+                        <p className="text-lg font-bold text-red-600">{formatCurrency(partial.sisa_tagihan)}</p>
+                      </div>
+                      <Link href="/portal/tagihan" className="flex-shrink-0">
+                        <button className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-orange-500/20">
+                          Bayar Lunas
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 

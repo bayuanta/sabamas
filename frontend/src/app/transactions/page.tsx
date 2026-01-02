@@ -55,9 +55,24 @@ export default function TransactionsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => paymentsApi.cancel(id),
     onSuccess: () => {
+      // Global invalidation
       queryClient.invalidateQueries({ queryKey: ['payments'] })
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['arrears-report'] })
+      queryClient.invalidateQueries({ queryKey: ['customer-portal'] }) // Ensure portal is updated too
+
+      // Specific customer invalidation
+      if (selectedPayment?.customer_id) {
+        queryClient.invalidateQueries({ queryKey: ['customer', selectedPayment.customer_id] })
+        queryClient.invalidateQueries({ queryKey: ['partial-payments', selectedPayment.customer_id] })
+      } else {
+        // Fallback broad invalidation
+        queryClient.invalidateQueries({ queryKey: ['customer'] })
+        queryClient.invalidateQueries({ queryKey: ['partial-payments'] })
+      }
+
       setDeleteModalOpen(false)
       setSelectedPayment(null)
     },

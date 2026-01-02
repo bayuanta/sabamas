@@ -655,47 +655,74 @@ export default function DashboardPage() {
           <div className="p-0">
             {stats?.recentPayments && stats.recentPayments.length > 0 ? (
               <div className="divide-y divide-gray-50">
-                {stats.recentPayments.slice(0, 5).map((payment: any, index: number) => (
-                  <motion.div
-                    key={payment.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 + index * 0.1 }}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors group cursor-default"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-600 font-bold text-xs shadow-sm group-hover:scale-110 transition-transform">
-                        {payment.customer_nama.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm group-hover:text-indigo-600 transition-colors">
-                          {payment.customer_nama}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-gray-500">
-                            {new Date(payment.tanggal_bayar).toLocaleDateString('id-ID', {
-                              day: 'numeric', month: 'short', year: 'numeric'
-                            })}
-                          </span>
-                          <span className="text-gray-300">•</span>
-                          <span className="text-[10px] text-gray-400">
-                            {new Date(payment.tanggal_bayar).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                {stats.recentPayments.slice(0, 5).map((payment: any, index: number) => {
+                  let months: any[] = []
+                  try {
+                    const parsed = JSON.parse(payment.bulan_dibayar)
+                    if (Array.isArray(parsed)) months = parsed
+                  } catch (e) { }
+
+                  let isPartial = false
+                  try {
+                    if (payment.month_breakdown) {
+                      const breakdown = JSON.parse(payment.month_breakdown)
+                      if (breakdown && typeof breakdown === 'object') {
+                        const values = Object.values(breakdown) as any[]
+                        // Detect if any entry is related to installment/cicilan
+                        if (values.some(v => v?.source === 'history' || (v?.details && typeof v.details === 'string' && v.details.toLowerCase().includes('cicilan')))) {
+                          isPartial = true
+                        }
+                      }
+                    }
+                  } catch (e) { }
+
+                  return (
+                    <motion.div
+                      key={payment.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.7 + index * 0.1 }}
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors group cursor-default"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center text-indigo-600 font-bold text-sm shadow-sm border border-indigo-100/50 group-hover:scale-105 transition-transform">
+                          {payment.customer_nama.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 text-sm group-hover:text-indigo-600 transition-colors">
+                            {payment.customer_nama}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {isPartial ? (
+                              <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                                Cicilan
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                                {months.length} Bulan
+                              </span>
+                            )}
+                            <span className="text-gray-300 text-[10px]">|</span>
+                            <span className="text-[10px] text-gray-400">
+                              {new Date(payment.tanggal_bayar).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} • {new Date(payment.tanggal_bayar).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900 text-sm mb-0.5">{formatCurrency(payment.jumlah_bayar)}</p>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${payment.metode_bayar === 'tunai'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                        : 'bg-blue-50 text-blue-700 border border-blue-100'
-                        }`}>
-                        {payment.metode_bayar === 'tunai' ? 'Tunai' : 'Transfer'}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="text-right">
+                        <p className="font-bold text-gray-900 text-sm mb-1">{formatCurrency(payment.jumlah_bayar)}</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${payment.metode_bayar === 'tunai'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          : 'bg-blue-50 text-blue-600 border border-blue-100'
+                          }`}>
+                          {payment.metode_bayar === 'tunai' ? 'Tunai' : 'Transfer'}
+                        </span>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
