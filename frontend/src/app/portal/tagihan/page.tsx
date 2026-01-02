@@ -2,7 +2,7 @@
 
 import PortalLayout from '@/components/PortalLayout'
 import { useQuery } from '@tanstack/react-query'
-import { customersApi, settingsApi } from '@/lib/api'
+import { customersApi, settingsApi, paymentsApi } from '@/lib/api'
 import { formatCurrency, formatMonth } from '@/lib/utils'
 import Badge from '@/components/ui/Badge'
 import { Receipt, CheckCircle, AlertCircle, DollarSign, Calendar, Phone, MapPin, CreditCard, Info, Download, MessageCircle, ChevronRight, Copy } from 'lucide-react'
