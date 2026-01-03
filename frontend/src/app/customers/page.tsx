@@ -217,7 +217,7 @@ export default function CustomersPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Link
-                            href={`/customers/${customer.id}`}
+                            href={`/customers/view?id=${customer.id}`}
                             className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                           >
                             <ArrowRight className="w-4 h-4" />

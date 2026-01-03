@@ -1,14 +1,51 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { Autoplay, Pagination } from 'swiper/modules';
 
 export default function Home() {
+  const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
+  useEffect(() => {
+    // Logika untuk menentukan mode aplikasi (Admin vs Pelanggan)
+    const appType = process.env.NEXT_PUBLIC_MOBILE_APP_TYPE;
+
+    if (appType === 'admin') {
+      setIsRedirecting(true);
+      router.push('/login');
+    } else if (appType === 'customer') {
+      setIsRedirecting(true);
+      router.push('/portal-login');
+    }
+  }, [router]);
+
+  // Tampilkan loading screen sederhana saat redirect
+  if (isRedirecting) {
+    return (
+      <div style={{
+        height: '100vh',
+        width: '100vw',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        position: 'fixed',
+        zIndex: 9999,
+        top: 0,
+        left: 0
+      }}>
+        {/* Menggunakan image loader standar jika ada, atau text saja */}
+        <h3 style={{ color: '#333' }}>Memuat Aplikasi...</h3>
+      </div>
+    );
+  }
 
   return (
     <>

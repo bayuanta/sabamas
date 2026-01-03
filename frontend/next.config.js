@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export', // Penting untuk Capacitor (Static Export)
   reactStrictMode: true,
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   },
   images: {
+    unoptimized: true, // Penting untuk APK (karena tidak ada server image optimization)
     remotePatterns: [
       {
         protocol: 'https',
