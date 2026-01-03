@@ -8,6 +8,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, Loader2, ArrowRight, UserCircle, CheckCircle2, CreditCard, Clock, Smartphone, Leaf } from 'lucide-react'
 
+import { Capacitor } from '@capacitor/core'
+
 export default function PortalLoginPage() {
   const router = useRouter()
   const [identifier, setIdentifier] = useState('')
@@ -15,6 +17,8 @@ export default function PortalLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPin, setShowPin] = useState(false)
+
+  const isNative = Capacitor.isNativePlatform()
 
   // Get settings for logo
   const { data: settings } = useQuery({
@@ -177,16 +181,18 @@ export default function PortalLoginPage() {
               </div>
             </form>
 
-            {/* Admin Link */}
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-              <Link
-                href="/login"
-                className="text-brote-gray hover:text-brote-base text-sm font-medium transition-colors inline-flex items-center gap-2 group"
-              >
-                <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
-                <span>Login sebagai Admin</span>
-              </Link>
-            </div>
+            {/* Admin Link - Hide on Mobile App */}
+            {!isNative && (
+              <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                <Link
+                  href="/login"
+                  className="text-brote-gray hover:text-brote-base text-sm font-medium transition-colors inline-flex items-center gap-2 group"
+                >
+                  <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                  <span>Login sebagai Admin</span>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
