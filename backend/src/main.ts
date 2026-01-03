@@ -9,8 +9,9 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: true, // Allow all origins temporarily for LAN access
-    credentials: true,
+    origin: '*', // Allow all origins explicitly
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   // Serve static files from uploads directory
