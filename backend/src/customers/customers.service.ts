@@ -67,10 +67,12 @@ export class CustomersService {
     const where: any = {};
 
     if (search) {
-      { nama: { contains: search, mode: 'insensitive' } },
-      { alamat: { contains: search, mode: 'insensitive' } },
-      { nomor_telepon: { contains: search, mode: 'insensitive' } },
-      { nomor_pelanggan: { contains: search, mode: 'insensitive' } },
+      where.OR = [
+        { nama: { contains: search, mode: 'insensitive' } },
+        { alamat: { contains: search, mode: 'insensitive' } },
+        { nomor_telepon: { contains: search, mode: 'insensitive' } },
+        { nomor_pelanggan: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (wilayah) {
