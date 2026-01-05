@@ -268,7 +268,7 @@ export class ArrearsCalculatorService {
    * In-Memory version of TariffCalculatorService.getTariffForMonth
    * Expects customer object to have: tarifOverrides, tarifHistories, tarif
    */
-  private getTariffForMonthInMemory(customer: any, month: string): TariffResult {
+  public getTariffForMonthInMemory(customer: any, month: string): TariffResult {
     // 1. Check TarifOverride
     if (customer.tarifOverrides && customer.tarifOverrides.length > 0) {
       const override = customer.tarifOverrides.find((o: any) => o.bulan_berlaku === month);

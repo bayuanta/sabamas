@@ -147,10 +147,13 @@ export class ReportsService {
       select: {
         id: true,
         tanggal_bergabung: true,
+        tanggal_efektif_tarif: true,
         tarif: {
-          select: { harga_per_bulan: true } // Assuming standard tariff
+          select: { harga_per_bulan: true, nama_kategori: true }
         },
-        tarifOverrides: true, // To handle custom tariffs if necessary (simplified for now)
+        tarifOverrides: true,
+        tarifHistories: true,
+        statusHistories: true,
       },
     });
 
@@ -193,8 +196,12 @@ export class ReportsService {
         // Include customer if they joined ON or BEFORE the end of this month
         // logic: joinDate <= endOfThisMonth
         if (joinDate <= endOfThisMonth) {
-          totalTagihan += customer.tarif?.harga_per_bulan || 0;
-          totalCustomersThisMonth++;
+          const tariffResult = this.arrearsCalculator.getTariffForMonthInMemory(customer, monthKey);
+
+          if (tariffResult.amount > 0) {
+            totalTagihan += tariffResult.amount;
+            totalCustomersThisMonth++;
+          }
         }
       }
 
