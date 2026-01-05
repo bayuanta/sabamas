@@ -66,7 +66,7 @@ cd sabamas
 ```bash
 cd backend
 # 1. Install dependencies
-npm install
+npm install --legacy-peer-deps
 
 # 2. Setup Environment Variables
 cp .env.example .env
@@ -98,7 +98,7 @@ npm install
 cp .env.example .env
 nano .env
 # WAJIB DIUBAH DI FRONTEND .ENV:
-# NEXT_PUBLIC_API_URL=http://IP_VPS_ANDA:3001/api  <-- Ganti localhost dengan IP VPS
+# NEXT_PUBLIC_API_URL=https://domain_anda.com/api  <-- Ganti dengan Domain/IP VPS (HTTPS disarankan)
 ```
 
 # 3. Build & Jalankan Aplikasi
@@ -169,8 +169,18 @@ Instal Nginx agar aplikasi bisa diakses via `http://IP_VPS` atau `http://domain.
            proxy_cache_bypass $http_upgrade;
        }
 
-       # Backend (NestJS API) - Opsional jika frontend akses API via domain yg sama
+       # Backend (NestJS API)
        location /api {
+           proxy_pass http://localhost:3001;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+
+       # Static Files (Uploads/Images)
+       location /uploads {
            proxy_pass http://localhost:3001;
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
@@ -206,7 +216,7 @@ Jika Anda sudah update fitur di lokal dan sudah push ke GitHub, lakukan ini di V
 
 3. **Install ulang dependency (jaga-jaga ada library baru)**:
    ```bash
-   cd backend && npm install
+   cd backend && npm install --legacy-peer-deps
    cd ../frontend && npm install
    ```
 
@@ -224,5 +234,5 @@ Jika Anda sudah update fitur di lokal dan sudah push ke GitHub, lakukan ini di V
 
 6. **Restart Aplikasi**:
    ```bash
-   pm2 restart all
+   pm2 restart all --update-env
    ```
