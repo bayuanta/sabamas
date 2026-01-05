@@ -313,7 +313,7 @@ export default function SettingsPage() {
             {logoPreview ? (
               <img src={logoPreview} alt="Preview" className="max-h-32 object-contain" />
             ) : settings?.logo ? (
-              <img src={`http://localhost:3001${settings.logo}`} alt="Current Logo" className="max-h-32 object-contain" />
+              <img src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001'}${settings.logo}`} alt="Current Logo" className="max-h-32 object-contain" />
             ) : (
               <div className="text-center text-gray-400">
                 <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
