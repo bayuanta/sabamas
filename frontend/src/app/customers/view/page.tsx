@@ -119,6 +119,7 @@ function CustomerDetailContent() {
                 alamat: customer.alamat,
                 wilayah: customer.wilayah,
                 nomor_telepon: customer.nomor_telepon || '',
+                nomor_pelanggan: customer.nomor_pelanggan || '',
                 tarif_id: customer.tarif_id,
                 status: customer.status,
                 tanggal_bergabung: new Date(customer.tanggal_bergabung).toISOString().split('T')[0],
@@ -761,6 +762,20 @@ function CustomerDetailContent() {
                     title="Edit Pelanggan"
                 >
                     <form onSubmit={handleUpdateSubmit} className="space-y-5">
+                        {/* Nomor Pelanggan */}
+                        <div>
+                            <label htmlFor="edit-nomor-pelanggan" className="block text-sm font-bold text-gray-700 mb-1.5">
+                                Nomor Pelanggan
+                            </label>
+                            <input
+                                id="edit-nomor-pelanggan"
+                                type="text"
+                                value={editFormData.nomor_pelanggan}
+                                onChange={(e) => setEditFormData({ ...editFormData, nomor_pelanggan: e.target.value })}
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            />
+                        </div>
+
                         {/* Nama */}
                         <div>
                             <label htmlFor="edit-nama" className="block text-sm font-bold text-gray-700 mb-1.5">

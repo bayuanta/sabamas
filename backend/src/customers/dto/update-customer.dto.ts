@@ -7,6 +7,10 @@ export class UpdateCustomerDto {
 
   @IsString()
   @IsOptional()
+  nomor_pelanggan?: string;
+
+  @IsString()
+  @IsOptional()
   alamat?: string;
 
   @IsString()

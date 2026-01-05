@@ -68,9 +68,9 @@ export class CustomersService {
 
     if (search) {
       where.OR = [
-        { nama: { contains: search } },
-        { alamat: { contains: search } },
-        { nomor_telepon: { contains: search } },
+        { nama: { contains: search, mode: 'insensitive' } },
+        { alamat: { contains: search, mode: 'insensitive' } },
+        { nomor_telepon: { contains: search, mode: 'insensitive' } },
       ];
     }
 
