@@ -273,6 +273,19 @@ export class ReportsService {
     // Calculate total arrears (simplified)
     const totalArrears = await this.arrearsCalculator.calculateTotalArrears();
 
+    // --- Wilayah Stats (Distribution) ---
+    // Group by wilayah and count active customers
+    const wilayahStatsRaw = await this.prisma.customer.groupBy({
+      by: ['wilayah'],
+      where: { status: 'aktif' },
+      _count: { wilayah: true },
+    });
+
+    const wilayahStats = wilayahStatsRaw.map(item => ({
+      wilayah: item.wilayah,
+      count: item._count.wilayah,
+    }));
+
     return {
       pemasukanHariIni: paymentsTodayData._sum.jumlah_bayar || 0,
       pemasukanBulanIni: paymentsMonthData._sum.jumlah_bayar || 0,
@@ -283,6 +296,7 @@ export class ReportsService {
       recentPayments, // Top 10 for list
       monthlyStats,   // Calculated billing stats
       allPaymentsForYear: paymentsMadeInYear, // For the revenue line chart
+      wilayahStats,   // NEW: Proper aggregated stats
     };
   }
 }

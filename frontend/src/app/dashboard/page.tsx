@@ -896,7 +896,7 @@ export default function DashboardPage() {
           })()}
 
           {/* Customers by Wilayah */}
-          {customersData?.data && (
+          {(stats?.wilayahStats || customersData?.data) && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -917,11 +917,11 @@ export default function DashboardPage() {
                 {isMounted && (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart
-                      data={Object.entries(
-                        customersData.data.reduce((acc: any, customer: any) => {
+                      data={stats?.wilayahStats || Object.entries(
+                        customersData?.data?.reduce((acc: any, customer: any) => {
                           acc[customer.wilayah] = (acc[customer.wilayah] || 0) + 1
                           return acc
-                        }, {})
+                        }, {}) || {}
                       ).map(([wilayah, count]) => ({ wilayah, count }))}
                       margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                     >
