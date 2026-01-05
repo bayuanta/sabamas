@@ -7,6 +7,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   },
+  optimizeFonts: false, // Fix build timeout on VPS
   images: {
     unoptimized: true, // Penting untuk APK (karena tidak ada server image optimization)
     remotePatterns: [
