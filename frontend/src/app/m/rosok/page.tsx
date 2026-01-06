@@ -54,12 +54,31 @@ export default function MobileRosok() {
     const totalAmount = cart.reduce((sum, item) => sum + item.total, 0)
     const totalWeight = cart.reduce((sum, item) => sum + item.weight, 0)
 
+    // ... imports
+    import { generateReceiptPDF } from '@/lib/mobile-print'
+    import { shareViaWhatsApp } from '@/lib/mobile-share'
+
+    // ... inside component
     const handleSave = () => {
         if (cart.length === 0) return
-        alert(`Transaksi disimpan!\nTotal: ${formatCurrency(totalAmount)}\n(Fitur API belum tersambung)`)
-        setCart([])
-        setCustomerName('')
-        router.push('/m')
+
+        // Create dummy transaction object
+        const transaction = {
+            tanggal_bayar: new Date().toISOString(),
+            customer_nama: customerName || 'Pelanggan Umum',
+            items: cart,
+            jumlah_bayar: totalAmount
+        }
+
+        // Generate PDF directly
+        generateReceiptPDF(transaction)
+
+        // Reset cart
+        if (confirm('Transaksi berhasil dicetak! Hapus keranjang?')) {
+            setCart([])
+            setCustomerName('')
+            router.push('/m')
+        }
     }
 
     return (

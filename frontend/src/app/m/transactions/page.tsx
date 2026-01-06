@@ -98,8 +98,8 @@ export default function MobileTransactions() {
                                             key={m}
                                             onClick={() => setMetodeBayar(m)}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${metodeBayar === m
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'bg-gray-100 text-gray-600'
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-gray-100 text-gray-600'
                                                 }`}
                                         >
                                             {m === '' ? 'Semua' : m}
@@ -139,27 +139,47 @@ export default function MobileTransactions() {
                                         key={payment.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between"
+                                        className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${payment.metode_bayar === 'tunai' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
-                                                }`}>
-                                                {payment.metode_bayar === 'tunai' ? <Receipt className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />} // Fix undefined CreditCard
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${payment.metode_bayar === 'tunai' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                                                    }`}>
+                                                    {payment.metode_bayar === 'tunai' ? <Receipt className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900 line-clamp-1">{payment.customer?.nama || 'Pelanggan dihapus'}</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {/* Simple time display */}
+                                                        {new Date(payment.tanggal_bayar).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                        {' • '}
+                                                        {Array.isArray(payment.bulan_dibayar) ? `${payment.bulan_dibayar.length} bulan` : ''}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-gray-900 line-clamp-1">{payment.customer?.nama || 'Pelanggan dihapus'}</p>
-                                                <p className="text-xs text-gray-500">
-                                                    {/* Simple time display */}
-                                                    {new Date(payment.tanggal_bayar).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                                    {' • '}
-                                                    {Array.isArray(payment.bulan_dibayar) ? `${payment.bulan_dibayar.length} bulan` : ''}
-                                                </p>
+                                            <div className="text-right">
+                                                <p className="font-bold text-gray-900">{formatCurrency(payment.jumlah_bayar)}</p>
+                                                <p className={`text-[10px] font-semibold uppercase ${payment.metode_bayar === 'tunai' ? 'text-green-600' : 'text-blue-600'
+                                                    }`}>{payment.metode_bayar}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-gray-900">{formatCurrency(payment.jumlah_bayar)}</p>
-                                            <p className={`text-[10px] font-semibold uppercase ${payment.metode_bayar === 'tunai' ? 'text-green-600' : 'text-blue-600'
-                                                }`}>{payment.metode_bayar}</p>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex justify-end gap-2 border-t border-gray-50 pt-3 mt-1">
+                                            <button
+                                                onClick={() => generateReceiptPDF(payment)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-colors"
+                                            >
+                                                <Printer className="w-3.5 h-3.5" />
+                                                Cetak
+                                            </button>
+                                            <button
+                                                onClick={() => shareViaWhatsApp(payment, payment.customer?.nomor_telepon)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors"
+                                            >
+                                                <Share2 className="w-3.5 h-3.5" />
+                                                WA
+                                            </button>
                                         </div>
                                     </motion.div>
                                 ))}

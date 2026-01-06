@@ -6,9 +6,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { customersApi, paymentsApi, tariffsApi } from '@/lib/api'
 import MobileHeader from '@/components/mobile/MobileHeader'
 import { formatCurrency } from '@/lib/utils'
-import { Search, Check, Wallet, CreditCard, ChevronDown, User, Calendar, X } from 'lucide-react' // Fixed imports
+import { Search, Check, Wallet, CreditCard, ChevronDown, User, Calendar, X, Printer, Share2 } from 'lucide-react' // Fixed imports
 import { motion, AnimatePresence } from 'framer-motion'
 import { TimezoneUtil } from '@/../../backend/src/common/utils/timezone.util' // Assuming shared utils or recreate logic
+import { generateReceiptPDF } from '@/lib/mobile-print'
+import { shareViaWhatsApp } from '@/lib/mobile-share'
 
 // Simplify timezone util for frontend
 const getMonthString = (date = new Date()) => {
@@ -31,6 +33,7 @@ export default function MobileBilling() {
     const [selectedMonths, setSelectedMonths] = useState<string[]>([])
     const [paymentMethod, setPaymentMethod] = useState('tunai')
     const [successModalOpen, setSuccessModalOpen] = useState(false)
+    const [lastPayment, setLastPayment] = useState<any>(null)
 
     // Initialize from URL param
     useEffect(() => {
@@ -196,8 +199,8 @@ export default function MobileBilling() {
                         <button
                             onClick={() => setPaymentMethod('tunai')}
                             className={`flex items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'tunai'
-                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                    : 'border-gray-100 bg-white text-gray-500'
+                                ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                                : 'border-gray-100 bg-white text-gray-500'
                                 }`}
                         >
                             <Wallet className="w-5 h-5 mr-2" />
@@ -206,8 +209,8 @@ export default function MobileBilling() {
                         <button
                             onClick={() => setPaymentMethod('transfer')}
                             className={`flex items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'transfer'
-                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                    : 'border-gray-100 bg-white text-gray-500'
+                                ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                                : 'border-gray-100 bg-white text-gray-500'
                                 }`}
                         >
                             <CreditCard className="w-5 h-5 mr-2" />
@@ -331,8 +334,8 @@ function MonthSelector({ selected, onChange }: { selected: string[], onChange: (
                     key={m.val}
                     onClick={() => toggle(m.val)}
                     className={`py-2 rounded-lg text-sm font-semibold transition-all ${selected.includes(m.val)
-                            ? 'bg-indigo-600 text-white shadow-md'
-                            : 'bg-white border border-gray-200 text-gray-600 hover:border-indigo-300'
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'bg-white border border-gray-200 text-gray-600 hover:border-indigo-300'
                         }`}
                 >
                     {m.label}
