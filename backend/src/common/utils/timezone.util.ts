@@ -8,7 +8,10 @@ export class TimezoneUtil {
    * Get current date/time in WIB (Asia/Jakarta timezone)
    */
   static nowWIB(): Date {
-    return new Date();
+    const now = new Date();
+    // Convert to WIB by adjusting timezone
+    const wibTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    return wibTime;
   }
 
   /**
@@ -23,7 +26,7 @@ export class TimezoneUtil {
     const hours = String(wibDate.getHours()).padStart(2, '0');
     const minutes = String(wibDate.getMinutes()).padStart(2, '0');
     const seconds = String(wibDate.getSeconds()).padStart(2, '0');
-
+    
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+07:00`;
   }
 
@@ -53,7 +56,7 @@ export class TimezoneUtil {
     const months: string[] = [];
     const current = new Date(startDate);
     current.setDate(1); // Set to first day of month
-
+    
     const end = new Date(endDate);
     end.setDate(1);
 
