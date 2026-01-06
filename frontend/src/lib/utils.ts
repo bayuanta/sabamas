@@ -15,7 +15,7 @@ export function formatCurrency(amount: number): string {
 
 export function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString('id-ID', {
-    timeZone: 'Asia/Jakarta',
+    timeZone: 'UTC',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -24,7 +24,7 @@ export function formatDate(date: Date | string): string {
 
 export function formatDateTime(date: Date | string): string {
   return new Date(date).toLocaleString('id-ID', {
-    timeZone: 'Asia/Jakarta',
+    timeZone: 'UTC',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
