@@ -107,7 +107,7 @@ export default function EditCustomerPage({ params }: PageProps) {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <MobileHeader title="Edit Pelanggan" backUrl="/m/customers" />
+            <MobileHeader title="Edit Pelanggan" showBack />
 
             <div className="p-5">
                 <form onSubmit={handleSubmit} className="space-y-5">
