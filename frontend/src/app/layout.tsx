@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: 'SABAMAS - Sistem Billing Sampah',
   description: 'Aplikasi billing dan manajemen pembayaran sampah',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/logo-sabamas.png',
   },
   manifest: '/manifest.json',
 }
