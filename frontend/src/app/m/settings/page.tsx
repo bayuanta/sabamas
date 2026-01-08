@@ -74,7 +74,7 @@ export default function MobileSettings() {
                     <div key={group.title}>
                         <h3 className="text-sm font-bold text-gray-500 uppercase px-4 mb-2">{group.title}</h3>
                         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                            {group.items.map((item, index) => {
+                            {group.items.map((item: any, index) => {
                                 const Icon = item.icon
                                 return (
                                     <button
