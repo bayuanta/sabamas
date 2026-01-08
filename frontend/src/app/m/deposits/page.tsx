@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { paymentsApi } from '@/lib/api'
+import { paymentsApi, depositsApi } from '@/lib/api'
 import MobileHeader from '@/components/mobile/MobileHeader'
 import { formatCurrency } from '@/lib/utils'
 import { Wallet, Upload, History, AlertCircle, Check } from 'lucide-react'
@@ -32,7 +32,7 @@ export default function MobileDeposits() {
 
     // Create Deposit Mutation
     const depositMutation = useMutation({
-        mutationFn: () => paymentsApi.createDeposit({
+        mutationFn: () => depositsApi.create({
             paymentIds: undepositedData?.map((p: any) => p.id) || []
         }),
         onSuccess: () => {
