@@ -36,11 +36,16 @@ export default function ReceiptModal({ isOpen, onClose, payment }: ReceiptModalP
               onClick={() => {
                 const receipt = document.getElementById('payment-receipt');
                 if (receipt) {
-                  receipt.style.display = 'block';
+                  // Clean approach: Add class to isolate print content
+                  receipt.classList.add('print-content-wrapper');
+                  receipt.classList.add('print:block');
+                  window.print();
+
+                  // Clean up after print dialog closes
                   setTimeout(() => {
-                    window.print();
-                    receipt.style.display = 'none';
-                  }, 100);
+                    receipt.classList.remove('print-content-wrapper');
+                    receipt.classList.remove('print:block');
+                  }, 500);
                 }
               }}
               variant="secondary"
@@ -54,11 +59,13 @@ export default function ReceiptModal({ isOpen, onClose, payment }: ReceiptModalP
               onClick={() => {
                 const receipt = document.getElementById('payment-receipt-thermal');
                 if (receipt) {
-                  receipt.style.display = 'block';
+                  receipt.classList.add('print-content-wrapper');
+                  receipt.classList.add('print:block');
+                  window.print();
                   setTimeout(() => {
-                    window.print();
-                    receipt.style.display = 'none';
-                  }, 100);
+                    receipt.classList.remove('print-content-wrapper');
+                    receipt.classList.remove('print:block');
+                  }, 500);
                 }
               }}
               variant="secondary"
@@ -72,11 +79,13 @@ export default function ReceiptModal({ isOpen, onClose, payment }: ReceiptModalP
               onClick={() => {
                 const receipt = document.getElementById('payment-receipt-compact');
                 if (receipt) {
-                  receipt.style.display = 'block';
+                  receipt.classList.add('print-content-wrapper');
+                  receipt.classList.add('print:block');
+                  window.print();
                   setTimeout(() => {
-                    window.print();
-                    receipt.style.display = 'none';
-                  }, 100);
+                    receipt.classList.remove('print-content-wrapper');
+                    receipt.classList.remove('print:block');
+                  }, 500);
                 }
               }}
               variant="secondary"

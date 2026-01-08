@@ -32,18 +32,11 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
     }
 
     return (
-        <div id="bulk-bill-template" className="print:block hidden">
+        <div id="bulk-bill-template" className="print-content-wrapper hidden">
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
-                    @page {
-                        size: 215mm 330mm; /* Folio / F4 */
-                        margin: 0;
-                    }
-                    body {
-                        margin: 0;
-                        -webkit-print-color-adjust: exact;
-                    }
+                     /* Remove forced page sizes, let global css handle padding/margins */
                 }
             `}} />
             {pages.map((pageCustomers, pageIndex) => (
@@ -51,11 +44,15 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                     key={pageIndex}
                     className="page-container relative bg-white"
                     style={{
-                        width: '215mm',
-                        height: '329mm', // Slightly less than 330mm to prevent overflow
-                        padding: '10mm 15mm', // Adjust padding for optimal fit
+                        width: '100%',
+                        /* Reduce height to account for printer margins. 270mm is safe for A4/F4 */
+                        height: 'auto',
+                        minHeight: 'auto',
+                        padding: '5mm',
                         display: 'flex',
                         flexDirection: 'column',
+                        /* Use break-after for modern property, fallback to page-break-after */
+                        breakAfter: pageIndex < pages.length - 1 ? 'page' : 'auto',
                         pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto'
                     }}
                 >
@@ -76,7 +73,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                         flexDirection: 'column',
                                         position: 'relative',
                                         justifyContent: 'center',
-                                        maxHeight: '52mm',
+                                        maxHeight: '44mm',
                                         boxSizing: 'border-box'
                                     }}
                                 >
@@ -95,7 +92,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                             <div className="flex items-center gap-2">
                                                 <div className="w-10 h-10 flex items-center justify-center">
                                                     <img
-                                                        src={typeof window !== 'undefined' ? (window.localStorage.getItem('logo_url') || '/logo-placeholder.png') : '/logo-placeholder.png'}
+                                                        src={typeof window !== 'undefined' ? (window.localStorage.getItem('logo_url') || '/logo-sabamas.png') : '/logo-sabamas.png'}
                                                         onError={(e) => {
                                                             e.currentTarget.style.display = 'none';
                                                         }}
@@ -108,7 +105,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                                     <p className="text-[10px] text-black leading-none mt-0.5">Sahabat Bersih Masyarakat</p>
                                                 </div>
                                             </div>
-                                            <div className="bg-black text-white px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider">
+                                            <div className="border border-black px-2 py-0.5 rounded text-[11px] font-bold text-black uppercase tracking-wider">
                                                 SURAT TAGIHAN
                                             </div>
                                         </div>
@@ -119,7 +116,9 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                                 <div className="mb-0.5">
                                                     <p className="text-[10px] text-black uppercase font-bold">Pelanggan:</p>
                                                     <h2 className="text-base font-bold text-black leading-tight truncate">{item.customer.nama}</h2>
-                                                    <p className="text-[11px] font-bold text-white bg-black px-1.5 py-0.5 rounded inline-block mt-0.5">{item.customer.wilayah}</p>
+                                                    <p className="text-[11px] font-bold text-black uppercase mt-0.5">
+                                                        {item.customer.wilayah}
+                                                    </p>
                                                 </div>
                                             </div>
 
@@ -168,10 +167,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                         ))}
                     </div>
 
-                    {/* Small footer */}
-                    <div className="text-[8px] text-gray-300 text-center mt-2">
-                        halaman {pageIndex + 1}
-                    </div>
+
                 </div>
             ))}
         </div>

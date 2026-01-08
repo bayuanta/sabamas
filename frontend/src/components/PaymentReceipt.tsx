@@ -111,45 +111,33 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
             <div id={receiptId}>
                 <style dangerouslySetInnerHTML={{
                     __html: `
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            #${receiptId},
-            #${receiptId} * {
-              visibility: visible;
-            }
-            #${receiptId} {
-              position: fixed;
-              left: 0;
-              top: 0;
-              width: 58mm;
-              max-width: 58mm;
-              font-family: 'Courier New', 'Consolas', monospace;
-              font-size: 8px;
-              line-height: 1.3;
-              padding: 1mm 2mm;
-              color: #000;
-              box-sizing: border-box;
-            }
-            @page {
-              size: 58mm auto;
-              margin: 0;
-            }
-          }
-          #${receiptId} {
-            display: none;
-            width: 58mm;
-            max-width: 58mm;
-            font-family: 'Courier New', 'Consolas', monospace;
-            font-size: 8px;
-            line-height: 1.3;
-            padding: 4mm 2mm;
-            background: white;
-            color: #000;
-            box-sizing: border-box;
-          }
-        `}} />
+                    #${receiptId} {
+                        display: none;
+                    }
+                    @media print {
+                        @page {
+                            margin: 0;
+                            size: auto;
+                        }
+                        #${receiptId} {
+                            display: block !important;
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 58mm; /* Thermal is fixed width */
+                            max-width: 58mm;
+                            /* Override global padding for thermal - it needs to be tight */
+                            padding: 0 1mm !important; 
+                            margin: 0 !important;
+                            background: white;
+                            font-family: 'Courier New', 'Consolas', monospace;
+                            font-size: 8px;
+                            line-height: 1.2;
+                            color: #000;
+                            box-sizing: border-box;
+                        }
+                    }
+                `}} />
 
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: '2mm' }}>
@@ -307,47 +295,27 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
             <div id={receiptId}>
                 <style dangerouslySetInnerHTML={{
                     __html: `
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            #${receiptId},
-            #${receiptId} * {
-              visibility: visible;
-            }
-            #${receiptId} {
-              position: fixed;
-              left: 0;
-              top: 0;
-              width: 100%;
-              max-width: 215.9mm;
-              margin: 0;
-              padding: 0;
-              font-family: 'Times New Roman', serif;
-              font-size: 10pt;
-              line-height: 1.3;
-              color: #000;
-              background: white;
-            }
-            @page {
-              size: 215.9mm 330mm;
-              margin: 0;
-            }
-          }
-          #${receiptId} {
-            display: none;
-            width: 215.9mm;
-            height: 110mm;
-            padding: 10mm 15mm;
-            font-family: 'Times New Roman', serif;
-            font-size: 10pt;
-            line-height: 1.3;
-            color: #000;
-            background: white;
-            box-sizing: border-box;
-            border-bottom: 1px dashed #999;
-          }
-        `}} />
+                    #${receiptId} {
+                        display: none;
+                    }
+                    @media print {
+                        #${receiptId} {
+                            display: block !important;
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            max-width: 215.9mm;
+                            margin: 0;
+                            padding: 0;
+                            font-family: 'Times New Roman', serif;
+                            font-size: 10pt;
+                            line-height: 1.3;
+                            color: #000;
+                            background: white;
+                        }
+                    }
+                `}} />
 
                 {/* Compact Header */}
                 <div style={{
@@ -595,42 +563,36 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
         <div id={receiptId}>
             <style dangerouslySetInnerHTML={{
                 __html: `
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #${receiptId},
-          #${receiptId} * {
-            visibility: visible;
-          }
-          #${receiptId} {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 20mm;
-            background: white;
-          }
-          @page {
-            size: A4;
-            margin: 0;
-          }
-        }
-        #${receiptId} {
-          display: none;
-          width: 210mm;
-          min-height: 297mm;
-          padding: 20mm;
-          background: white;
-          font-family: 'Times New Roman', serif;
-          color: #000;
-          box-sizing: border-box;
-        }
-      `}} />
+                    #${receiptId} {
+                        display: none;
+                    }
+                    @media print {
+                        @page {
+                            margin: 0;
+                            size: auto;
+                        }
+                        #${receiptId} {
+                            display: block !important;
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            /* Safe width to avoid printer margins cutting off content */
+                            width: 100%; 
+                            max-width: 100%;
+                            height: auto;
+                            min-height: 0;
+                            padding: 10mm; /* Reduced to 10mm to prevent spillover */
+                            background: white;
+                            font-family: 'Times New Roman', serif;
+                            color: #000;
+                            box-sizing: border-box;
+                            overflow: hidden; /* Clip everything strictly to one page */
+                        }
+                    }
+                `}} />
 
             {/* Header */}
-            <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '20px' }}>
                 {settings?.logo || (typeof window !== 'undefined' && window.localStorage.getItem('logo_url')) ? (
                     <img
                         src={typeof window !== 'undefined' ? (window.localStorage.getItem('logo_url') || `${API_URL}${settings?.logo}`) : `${API_URL}${settings?.logo}`}
@@ -647,9 +609,11 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                         style={{ width: '80px', height: '80px', objectFit: 'contain' }}
                     />
                 ) : (
-                    <div style={{ width: '80px', height: '80px', border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: 'bold' }}>
-                        S
-                    </div>
+                    <img
+                        src="/logo-sabamas.png"
+                        alt="Logo"
+                        style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+                    />
                 )}
                 <div style={{ flex: 1, textAlign: 'center' }}>
                     <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', textTransform: 'uppercase' }}>
@@ -780,66 +744,68 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
             </div>
 
             {/* Partial Payment Info Box - Simplified */}
-            {isPartialPayment && partialPaymentInfo && partialPaymentInfo.length > 0 && (() => {
-                // Only show months with remaining balance
-                const cicilanMonths = partialPaymentInfo.filter(p => p.sisa_tagihan > 0)
-                if (cicilanMonths.length === 0) return null
+            {
+                isPartialPayment && partialPaymentInfo && partialPaymentInfo.length > 0 && (() => {
+                    // Only show months with remaining balance
+                    const cicilanMonths = partialPaymentInfo.filter(p => p.sisa_tagihan > 0)
+                    if (cicilanMonths.length === 0) return null
 
-                return (
-                    <div style={{
-                        marginBottom: '20px',
-                        padding: '10px 15px',
-                        border: '1px solid #f97316',
-                        backgroundColor: '#fffbeb',
-                        borderRadius: '4px'
-                    }}>
+                    return (
                         <div style={{
-                            fontSize: '11px',
-                            fontWeight: 'bold',
-                            color: '#c2410c',
-                            marginBottom: '8px'
-                        }}>⚠️ SISA TAGIHAN CICILAN</div>
-
-                        {cicilanMonths.map((info, idx) => (
-                            <div key={idx} style={{
+                            marginBottom: '20px',
+                            padding: '10px 15px',
+                            border: '1px solid #f97316',
+                            backgroundColor: '#fffbeb',
+                            borderRadius: '4px'
+                        }}>
+                            <div style={{
                                 fontSize: '11px',
-                                marginBottom: idx < cicilanMonths.length - 1 ? '6px' : '0',
-                                paddingBottom: idx < cicilanMonths.length - 1 ? '6px' : '0',
-                                borderBottom: idx < cicilanMonths.length - 1 ? '1px dashed #fed7aa' : 'none'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: 'bold' }}>
-                                        {formatMonth(info.bulan_tagihan)} (Cicilan {info.payment_ids.length}x)
-                                    </span>
-                                    <span style={{ fontWeight: 'bold', color: '#dc2626' }}>
-                                        Sisa: {formatCurrency(info.sisa_tagihan)}
-                                    </span>
+                                fontWeight: 'bold',
+                                color: '#c2410c',
+                                marginBottom: '8px'
+                            }}>⚠️ SISA TAGIHAN CICILAN</div>
+
+                            {cicilanMonths.map((info, idx) => (
+                                <div key={idx} style={{
+                                    fontSize: '11px',
+                                    marginBottom: idx < cicilanMonths.length - 1 ? '6px' : '0',
+                                    paddingBottom: idx < cicilanMonths.length - 1 ? '6px' : '0',
+                                    borderBottom: idx < cicilanMonths.length - 1 ? '1px dashed #fed7aa' : 'none'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 'bold' }}>
+                                            {formatMonth(info.bulan_tagihan)} (Cicilan {info.payment_ids.length}x)
+                                        </span>
+                                        <span style={{ fontWeight: 'bold', color: '#dc2626' }}>
+                                            Sisa: {formatCurrency(info.sisa_tagihan)}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )
-            })()}
+                            ))}
+                        </div>
+                    )
+                })()
+            }
 
             {/* Signature */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '50px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', breakInside: 'avoid' }}>
                 <div style={{ textAlign: 'center', width: '200px' }}>
                     <p>Penyetor</p>
-                    <div style={{ height: '80px' }}></div>
+                    <div style={{ height: '60px' }}></div>
                     <p style={{ borderTop: '1px solid #000', paddingTop: '5px' }}>({customer?.nama || '...................'})</p>
                 </div>
                 <div style={{ textAlign: 'center', width: '200px' }}>
                     <p>Petugas Penerima</p>
-                    <div style={{ height: '80px' }}></div>
+                    <div style={{ height: '60px' }}></div>
                     <p style={{ borderTop: '1px solid #000', paddingTop: '5px' }}>(...................)</p>
                 </div>
             </div>
 
             {/* Footer Note */}
-            <div style={{ marginTop: '50px', fontSize: '10px', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
+            <div style={{ marginTop: '20px', fontSize: '10px', borderTop: '1px solid #ccc', paddingTop: '5px', breakInside: 'avoid' }}>
                 <p>Catatan: Simpan bukti pembayaran ini sebagai bukti pembayaran yang sah.</p>
                 <p>Dicetak pada: {currentDate.toLocaleString('id-ID')}</p>
             </div>
-        </div>
+        </div >
     )
 }

@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <Link href="/dashboard" className={`flex items-center gap-3 group ${isMinimized ? 'justify-center w-full' : ''}`}>
               <div className="relative w-10 h-10 flex items-center justify-center flex-shrink-0">
                 <img
-                  src="/assets/images/resources/logo-1.png"
+                  src="/logo-sabamas.png"
                   alt="Logo"
                   className="w-full h-full object-contain"
                 />
@@ -283,7 +283,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     className="relative w-10 h-10 rounded-full overflow-hidden bg-white border-2 border-slate-100 hover:border-blue-200 transition-colors focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   >
                     <img
-                      src="/assets/images/resources/logo-1.png"
+                      src="/logo-sabamas.png"
                       alt="Profile"
                       className="w-full h-full object-contain p-1"
                     />

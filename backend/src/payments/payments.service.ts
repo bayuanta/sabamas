@@ -197,7 +197,12 @@ export class PaymentsService {
     if (dateFrom || dateTo) {
       where.tanggal_bayar = {};
       if (dateFrom) where.tanggal_bayar.gte = new Date(dateFrom);
-      if (dateTo) where.tanggal_bayar.lte = new Date(dateTo);
+      // Fix: dateTo should be until the END of that day (23:59:59.999)
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        where.tanggal_bayar.lte = endDate;
+      }
     }
 
     if (metode_bayar) {
@@ -206,7 +211,7 @@ export class PaymentsService {
 
     const skip = (page - 1) * limit;
 
-    const [payments, total] = await Promise.all([
+    const [payments, total, aggregate] = await Promise.all([
       this.prisma.payment.findMany({
         where,
         include: {
@@ -219,6 +224,12 @@ export class PaymentsService {
         take: limit,
       }),
       this.prisma.payment.count({ where }),
+      this.prisma.payment.aggregate({
+        where,
+        _sum: {
+          jumlah_bayar: true,
+        },
+      }),
     ]);
 
     // Parse bulan_dibayar and month_breakdown for all payments
@@ -243,6 +254,7 @@ export class PaymentsService {
       data: paymentsWithParsed,
       meta: {
         total,
+        totalAmount: aggregate._sum.jumlah_bayar || 0,
         page,
         limit,
         totalPages: Math.ceil(total / limit),

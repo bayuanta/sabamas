@@ -32,4 +32,4 @@ import { RosokModule } from './rosok/rosok.module';
   providers: [PrismaService],
   exports: [PrismaService],
 })
-export class AppModule { }
+export class AppModule { } // vps-update-trigger

@@ -103,7 +103,10 @@ export default function TransactionsPage() {
     return payment.bulan_dibayar.some((month: string) => isFutureMonth(month))
   }
 
-  const totalAmount = data?.data?.reduce((sum: number, payment: any) => sum + (payment.jumlah_bayar || 0), 0) || 0
+  // Use total amount from server metadata if available, otherwise fallback to local page sum
+  const totalAmount = (typeof data?.meta?.totalAmount === 'number')
+    ? data.meta.totalAmount
+    : (data?.data?.reduce((sum: number, payment: any) => sum + (payment.jumlah_bayar || 0), 0) || 0)
   const totalTransactions = data?.meta?.total || data?.data?.length || 0
 
   const handleExport = async () => {

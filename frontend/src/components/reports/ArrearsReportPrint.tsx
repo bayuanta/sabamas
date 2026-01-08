@@ -11,30 +11,21 @@ export default function ArrearsReportPrint({ data, wilayah, totalCustomers, tota
     const currentDate = new Date()
 
     return (
-        <div id="arrears-report-print" style={{
-            width: '210mm',
+        <div id="arrears-report-print" className="print-content-wrapper hidden" style={{
+            width: '100%',
             minHeight: '297mm',
             margin: '0 auto',
             padding: '20mm',
             backgroundColor: 'white',
             color: 'black',
             fontFamily: 'sans-serif',
-            fontSize: '10pt'
+            fontSize: '10pt',
+            boxSizing: 'border-box'
         }}>
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
-                    @page { size: A4 portrait; margin: 10mm; }
-                    body * { visibility: hidden; }
-                    #arrears-report-print, #arrears-report-print * { visibility: visible; }
-                    #arrears-report-print {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
+                   /* Cleaned up styles */
                 }
                 `
             }} />

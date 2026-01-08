@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   // Ganti URL ini sesuai kebutuhan:
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:3001/api';
     // Use production domain for release build
     return 'https://sabamas.web.id/api'; 
   }
