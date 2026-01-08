@@ -52,22 +52,29 @@ export class ReportsService {
       where.wilayah = query.wilayah;
     }
 
+    // Optimization: Fetch ALL necessary data for arrears calculation in ONE query
     const customers = await this.prisma.customer.findMany({
       where,
       include: {
         tarif: true,
+        payments: true,
+        partialPayments: true,
+        statusHistories: {
+          orderBy: { tanggal_mulai: 'asc' },
+        },
+        tarifOverrides: true,
+        tarifHistories: true,
       },
     });
 
-    const customersWithArrears = await Promise.all(
-      customers.map(async (customer) => {
-        const arrears = await this.arrearsCalculator.calculateArrears(customer.id);
-        return {
-          customer,
-          arrears,
-        };
-      }),
-    );
+    // Calculate in memory using the exposed helper
+    const customersWithArrears = customers.map((customer) => {
+      const arrears = this.arrearsCalculator.calculateArrearsInMemory(customer);
+      return {
+        customer,
+        arrears,
+      };
+    });
 
     // Filter only customers with arrears
     const filtered = customersWithArrears.filter(c => c.arrears.totalArrears > 0);

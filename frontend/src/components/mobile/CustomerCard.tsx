@@ -1,15 +1,18 @@
 'use client'
 
-import { Phone, MapPin, MoreVertical, Trash2, Edit, CreditCard, User } from 'lucide-react'
+import { Phone, MapPin, Edit, CreditCard, User, MessageCircle } from 'lucide-react'
 import { motion, PanInfo, useAnimation } from 'framer-motion'
 import { formatCurrency } from '@/lib/utils'
+import { toast } from 'react-hot-toast'
 
 interface Customer {
     id: string
     nama: string
     wilayah: string
     nomor_telepon?: string
+    alamat?: string
     status: string
+    tunggakan?: number
     tarif: {
         harga_per_bulan: number
     }
@@ -39,6 +42,38 @@ export default function CustomerCard({ customer, onPay, onEdit, onDetail }: Cust
             // Snap back
             controls.start({ x: 0 })
         }
+    }
+
+    const handleShare = (e: React.MouseEvent) => {
+        e.stopPropagation()
+
+        const message = `
+*INFORMASI TUNGGAKAN*
+━━━━━━━━━━━━━━━━━━
+
+*Pelanggan:* ${customer.nama}
+*Alamat:* ${customer.alamat || '-'}
+*Wilayah:* ${customer.wilayah}
+
+━━━━━━━━━━━━━━━━━━
+*TOTAL TUNGGAKAN:* ${formatCurrency(customer.tunggakan || 0)}
+
+Mohon segera lakukan pembayaran. 🙏
+
+_SABAMAS - Sistem Billing Sampah_`.trim()
+
+        let url = 'https://wa.me'
+        if (customer.nomor_telepon) {
+            let phone = customer.nomor_telepon.replace(/\D/g, '')
+            if (phone.startsWith('0')) {
+                phone = '62' + phone.substring(1)
+            }
+            url += `/${phone}`
+        }
+
+        url += `?text=${encodeURIComponent(message)}`
+
+        window.open(url, '_blank')
     }
 
     const getStatusColor = (status: string) => {
@@ -97,13 +132,25 @@ export default function CustomerCard({ customer, onPay, onEdit, onDetail }: Cust
 
                     <div className="flex flex-col items-end gap-2">
                         <div className="text-right">
-                            <p className="text-[10px] text-gray-400">Tarif</p>
-                            <p className="font-bold text-indigo-600 text-sm">
-                                {formatCurrency(customer.tarif?.harga_per_bulan || 0)}
-                            </p>
+                            <p className="text-[10px] text-gray-400">Total Tunggakan</p>
+                            {customer.tunggakan && customer.tunggakan > 0 ? (
+                                <p className="font-bold text-rose-600 text-sm">
+                                    {formatCurrency(customer.tunggakan)}
+                                </p>
+                            ) : (
+                                <p className="font-bold text-emerald-600 text-sm">
+                                    Lunas
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex gap-1" onPointerDownCapture={e => e.stopPropagation()}>
+                            <button
+                                onClick={handleShare}
+                                className="p-2 bg-green-50 rounded-lg text-green-600 hover:bg-green-100 transition-colors"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                            </button>
                             <button
                                 onClick={onEdit}
                                 className="p-2 bg-gray-50 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"

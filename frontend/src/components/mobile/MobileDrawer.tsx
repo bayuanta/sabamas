@@ -13,8 +13,8 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     const router = useRouter()
 
     const menuItems = [
+        { id: 'tariffs', label: 'Tarif', icon: Package, path: '/m/tariffs' },
         { id: 'deposits', label: 'Setoran', icon: DollarSign, path: '/m/deposits' },
-        { id: 'rosok', label: 'Penjualan Rosok', icon: Package, path: '/m/rosok' },
         { id: 'reports', label: 'Laporan', icon: FileText, path: '/m/reports' },
         { id: 'settings', label: 'Pengaturan', icon: Settings, path: '/m/settings' },
     ]

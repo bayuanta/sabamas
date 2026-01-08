@@ -64,11 +64,18 @@ api.interceptors.response.use(
       localStorage.removeItem('user')
 
       // Redirect based on user type
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/portal-login')) {
-        // Prevent infinite redirect loops
-        if (userType === 'customer' || userType === 'pelanggan') {
+      // Redirect based on user type and current path
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/portal-login') && !window.location.pathname.includes('/m-login')) {
+        // Mobile Admin Redirect
+        if (window.location.pathname.startsWith('/m')) {
+          window.location.href = '/m-login'
+        }
+        // Portal Customer Redirect
+        else if (userType === 'customer' || userType === 'pelanggan') {
           window.location.href = '/portal-login'
-        } else {
+        }
+        // Desktop Admin Redirect
+        else {
           window.location.href = '/login'
         }
       }

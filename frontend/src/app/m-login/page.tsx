@@ -28,10 +28,10 @@ export default function MobileLogin() {
         mutationFn: (data: { email: string; password: string }) =>
             authApi.login(data.email, data.password),
         onSuccess: (response) => {
-            const { token, user } = response.data
+            const { access_token, user } = response.data
 
             // Store token and user info
-            localStorage.setItem('token', token)
+            localStorage.setItem('token', access_token)
             localStorage.setItem('user', JSON.stringify(user))
 
             // Store remember me preference

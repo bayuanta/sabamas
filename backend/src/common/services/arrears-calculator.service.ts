@@ -152,7 +152,7 @@ export class ArrearsCalculatorService {
    * Core logic to calculate arrears from a fully loaded customer object.
    * Does NOT perform database queries.
    */
-  private calculateArrearsInMemory(customer: any): ArrearsResult {
+  public calculateArrearsInMemory(customer: any): ArrearsResult {
     // Get all months from tanggal_bergabung to current month
     const startDate = new Date(customer.tanggal_bergabung);
     const currentDate = TimezoneUtil.nowWIB();

@@ -6,9 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import { paymentsApi } from '@/lib/api'
 import MobileHeader from '@/components/mobile/MobileHeader'
 import { formatCurrency } from '@/lib/utils'
-import { Receipt, Calendar, Filter, User, Search } from 'lucide-react'
+import { Receipt, Calendar, Filter, User, Search, Printer, Share2, CreditCard } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { TimezoneUtil } from '@/../../backend/src/common/utils/timezone.util'
+import { generatePaymentWhatsAppMessage, shareViaWhatsApp } from '@/lib/whatsapp'
+import { toast } from 'react-hot-toast'
 
 export default function MobileTransactions() {
     const router = useRouter()
@@ -44,6 +45,16 @@ export default function MobileTransactions() {
         groups[date].push(payment)
         return groups
     }, {})
+
+    const handleShare = (payment: any) => {
+        try {
+            const message = generatePaymentWhatsAppMessage(payment)
+            shareViaWhatsApp(message, payment.customer?.nomor_telepon)
+        } catch (error) {
+            console.error(error)
+            toast.error('Gagal membagikan ke WhatsApp')
+        }
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
@@ -167,14 +178,14 @@ export default function MobileTransactions() {
                                         {/* Action Buttons */}
                                         <div className="flex justify-end gap-2 border-t border-gray-50 pt-3 mt-1">
                                             <button
-                                                onClick={() => generateReceiptPDF(payment)}
+                                                onClick={() => router.push(`/m/billing/receipt/${payment.id}`)}
                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-colors"
                                             >
                                                 <Printer className="w-3.5 h-3.5" />
                                                 Cetak
                                             </button>
                                             <button
-                                                onClick={() => shareViaWhatsApp(payment, payment.customer?.nomor_telepon)}
+                                                onClick={() => handleShare(payment)}
                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-bold hover:bg-green-100 transition-colors"
                                             >
                                                 <Share2 className="w-3.5 h-3.5" />
@@ -189,25 +200,5 @@ export default function MobileTransactions() {
                 )}
             </div>
         </div>
-    )
-}
-
-function CreditCard(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect width="20" height="14" x="2" y="5" rx="2" />
-            <line x1="2" x2="22" y1="10" y2="10" />
-        </svg>
     )
 }
