@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,9 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 
-export const dynamic = 'force-dynamic'
-
-export default function MobileBilling() {
+function MobileBillingContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const queryClient = useQueryClient()
@@ -535,6 +534,18 @@ export default function MobileBilling() {
 
 
         </div>
+    )
+}
+
+export default function MobileBilling() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        }>
+            <MobileBillingContent />
+        </Suspense>
     )
 }
 
