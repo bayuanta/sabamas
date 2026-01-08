@@ -57,7 +57,7 @@ export default function MobileCustomerDetailPage() {
         <div className="min-h-screen bg-gray-50 pb-20">
             <MobileHeader
                 title="Detail Pelanggan"
-                backUrl="/m/customers"
+                showBack
                 actions={
                     <button
                         onClick={() => router.push(`/m/customers/${customerId}/edit`)}

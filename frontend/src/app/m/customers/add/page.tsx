@@ -91,7 +91,7 @@ export default function AddCustomerPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <MobileHeader title="Tambah Pelanggan" backUrl="/m/customers" />
+            <MobileHeader title="Tambah Pelanggan" showBack />
 
             <div className="p-5">
                 <form onSubmit={handleSubmit} className="space-y-5">
