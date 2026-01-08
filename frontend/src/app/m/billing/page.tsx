@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 
+export const dynamic = 'force-dynamic'
+
 export default function MobileBilling() {
     const router = useRouter()
     const searchParams = useSearchParams()
