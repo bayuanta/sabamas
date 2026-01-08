@@ -102,7 +102,7 @@
     /* SAFE ZONE: Prevent printer hardware margins from cutting content */
     padding-left: 5mm !important;
     padding-right: 5mm !important;
-    padding-top: 0 !important;
+    padding-top: 5mm !important;
     padding-bottom: 0 !important;
 
     background: white !important;

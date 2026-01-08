@@ -48,7 +48,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                         /* Reduce height to account for printer margins. 270mm is safe for A4/F4 */
                         height: 'auto',
                         minHeight: 'auto',
-                        padding: '5mm',
+                        padding: '0',
                         display: 'flex',
                         flexDirection: 'column',
                         /* Use break-after for modern property, fallback to page-break-after */
@@ -73,7 +73,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                         flexDirection: 'column',
                                         position: 'relative',
                                         justifyContent: 'center',
-                                        maxHeight: '44mm',
+                                        maxHeight: '40mm',
                                         boxSizing: 'border-box'
                                     }}
                                 >
