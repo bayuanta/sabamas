@@ -229,14 +229,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
+                              color: Colors.white, // White bg to ensure black avatar is visible in dark mode
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
                               ),
                             ),
                             alignment: Alignment.center,
-                            child: Icon(LucideIcons.user, color: Theme.of(context).iconTheme.color),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/admin-avatar.png',
+                                fit: BoxFit.cover,
+                                width: 40,
+                                height: 40,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(LucideIcons.user, color: Theme.of(context).iconTheme.color);
+                                },
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -341,12 +351,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
   }
 
-  NavigationDestination _buildNavDestination(IconData icon, int index) {
+  NavigationDestination _buildNavDestination(IconData icon, int index, {String? imageAsset}) {
     final theme = Theme.of(context);
     final unselectedColor = theme.brightness == Brightness.dark ? Colors.white54 : Colors.grey[400];
     
+    Widget buildIcon(Color? color, {double size = 24}) {
+      if (imageAsset != null) {
+        return Image.asset(
+          imageAsset,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+        );
+      }
+      return Icon(icon, color: color, size: size);
+    }
+
     return NavigationDestination(
-      icon: Icon(icon, color: unselectedColor),
+      icon: buildIcon(unselectedColor),
       selectedIcon: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -360,7 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             )
           ],
         ),
-        child: Icon(icon, color: Colors.white, size: 24),
+        child: buildIcon(Colors.white),
       ),
       label: '',
     );

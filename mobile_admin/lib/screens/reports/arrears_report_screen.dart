@@ -304,10 +304,20 @@ class _ArrearsReportScreenState extends State<ArrearsReportScreen> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  CircleAvatar(
-                                    backgroundColor: isDark ? Colors.red.withValues(alpha: 0.1) : Colors.red[50],
-                                    radius: 20,
-                                    child: const Icon(LucideIcons.user, color: Colors.red, size: 20),
+                                  ClipOval(
+                                    child: Image.asset(
+                                      'assets/images/customer-icon.png',
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return CircleAvatar(
+                                          backgroundColor: isDark ? Colors.red.withValues(alpha: 0.1) : Colors.red[50],
+                                          radius: 20,
+                                          child: const Icon(LucideIcons.user, color: Colors.red, size: 20),
+                                        );
+                                      },
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(

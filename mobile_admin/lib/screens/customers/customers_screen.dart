@@ -399,24 +399,34 @@ class _CustomersScreenState extends State<CustomersScreen> {
         child: Row(
           children: [
             // Avatar
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: isAktif 
-                    ? (isDark ? theme.primaryColor.withOpacity(0.2) : const Color(0xFFEFF6FF))
-                    : (isDark ? Colors.grey[800] : Colors.grey[100]),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  customer.nama.isNotEmpty ? customer.nama[0].toUpperCase() : '?',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isAktif ? theme.primaryColor : theme.disabledColor,
-                  ),
-                ),
+            ClipOval(
+              child: Image.asset(
+                'assets/images/customer-icon.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: isAktif 
+                          ? (isDark ? theme.primaryColor.withOpacity(0.2) : const Color(0xFFEFF6FF))
+                          : (isDark ? Colors.grey[800] : Colors.grey[100]),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        customer.nama.isNotEmpty ? customer.nama[0].toUpperCase() : '?',
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isAktif ? theme.primaryColor : theme.disabledColor,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),

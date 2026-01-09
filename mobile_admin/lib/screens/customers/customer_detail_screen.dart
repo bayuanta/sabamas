@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_admin/services/api_service.dart';
+import 'package:mobile_admin/services/receipt_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_admin/screens/customers/customer_form_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -169,12 +170,28 @@ _SABAMAS - Sistem Billing Sampah_
     }
   }
 
+  String _formatMonthYear(String yyyyMm) {
+    try {
+      final parts = yyyyMm.split('-');
+      if (parts.length >= 2) {
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final dt = DateTime(year, month);
+        return DateFormat('MMMM yyyy', 'id_ID').format(dt);
+      }
+      return yyyyMm;
+    } catch (e) {
+      return yyyyMm;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_customer == null) return const Scaffold(body: Center(child: Text('Data tidak ditemukan')));
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final c = _customer!;
     final isAktif = c.status == 'aktif';
     final hasArrears = (c.arrearsDetail?.totalArrears ?? 0) > 0;
@@ -212,10 +229,10 @@ _SABAMAS - Sistem Billing Sampah_
             color: theme.cardColor,
             child: TabBar(
               controller: _tabController,
-              labelColor: theme.primaryColor,
+              labelColor: isDark ? Colors.white : theme.primaryColor,
               unselectedLabelColor: theme.disabledColor,
               labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
-              indicatorColor: theme.primaryColor,
+              indicatorColor: isDark ? Colors.white : theme.primaryColor,
               tabs: const [
                 Tab(text: 'Tunggakan'),
                 Tab(text: 'Cicilan'),
@@ -330,7 +347,7 @@ _SABAMAS - Sistem Billing Sampah_
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.month, style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)), 
+                  Text(_formatMonthYear(item.month), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)), 
                   if (item.details.isNotEmpty)
                     Text(item.details, style: GoogleFonts.inter(fontSize: 12, color: theme.textTheme.bodySmall?.color)),
                 ],
@@ -376,7 +393,7 @@ _SABAMAS - Sistem Billing Sampah_
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(pp.bulanTagihan, style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
+                  Text(_formatMonthYear(pp.bulanTagihan), style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
@@ -447,41 +464,158 @@ _SABAMAS - Sistem Billing Sampah_
         final payment = c.payments![index];
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.green[900] : Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(LucideIcons.check, size: 20, color: Colors.green),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _showPaymentDetail(payment),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                     Text(
-                      DateFormat('dd MMM yyyy HH:mm').format(payment.tanggalBayar),
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: theme.textTheme.bodyLarge?.color),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.green[900] : Colors.green[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(LucideIcons.check, size: 20, color: Colors.green),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                           Text(
+                            DateFormat('dd MMM yyyy HH:mm').format(payment.tanggalBayar),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: theme.textTheme.bodyLarge?.color),
+                          ),
+                          Text(
+                            payment.metodeBayar.toUpperCase(),
+                            style: GoogleFonts.inter(fontSize: 12, color: theme.textTheme.bodySmall?.color),
+                          ),
+                          if (payment.bulanDibayar.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                payment.bulanDibayar.map((b) => _formatMonthYear(b)).join(', '),
+                                style: GoogleFonts.inter(fontSize: 11, color: isDark ? Colors.white70 : theme.textTheme.bodySmall?.color, fontStyle: FontStyle.italic),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                     Text(
-                      payment.metodeBayar.toUpperCase(),
-                      style: GoogleFonts.inter(fontSize: 12, color: theme.textTheme.bodySmall?.color),
+                      formatCurrency.format(payment.jumlahBayar),
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
                     ),
                   ],
                 ),
               ),
-              Text(
-                formatCurrency.format(payment.jumlahBayar),
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPaymentDetail(Payment p) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: Theme.of(context).cardColor,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+        
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, 
+                  height: 4, 
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text('Detail Pembayaran', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              _buildInfoItem('Waktu', DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(p.tanggalBayar)),
+              _buildInfoItem('Nominal', formatCurrency.format(p.jumlahBayar)),
+              _buildInfoItem('Metode', p.metodeBayar.toUpperCase()),
+              
+              if (p.bulanDibayar.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text('Untuk Bulan:', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: p.bulanDibayar.map((bulan) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withOpacity(0.1) : theme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: isDark ? Colors.white.withOpacity(0.2) : theme.primaryColor.withOpacity(0.2)),
+                      ),
+                      child: Text(
+                        _formatMonthYear(bulan),
+                        style: GoogleFonts.inter(fontSize: 12, color: isDark ? Colors.white : theme.primaryColor, fontWeight: FontWeight.w500),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+              
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(LucideIcons.printer),
+                      label: const Text('Cetak Struk'),
+                      onPressed: () async {
+                        // Map Payment to PaymentResult for printing
+                        final result = PaymentResult(
+                          id: p.id,
+                          jumlahBayar: p.jumlahBayar,
+                          tanggalBayar: p.tanggalBayar,
+                          metodeBayar: p.metodeBayar,
+                          customerNama: _customer?.nama ?? '-',
+                          bulanDibayar: p.bulanDibayar,
+                          isPartial: false // Assuming history list shows completed or tracked payments
+                        );
+
+                        await ReceiptService.printReceipt(
+                          result, 
+                          customerName: _customer?.nama,
+                          customerWilayah: _customer?.wilayah,
+                          isThermalMode: true // Force 58mm thermal layout
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Tutup'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

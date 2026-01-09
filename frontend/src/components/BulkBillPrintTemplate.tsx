@@ -24,8 +24,8 @@ interface BulkBillPrintTemplateProps {
 }
 
 export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps) {
-    // Split customers into pages of 6
-    const itemsPerPage = 6
+    // Split customers into pages of 7
+    const itemsPerPage = 7
     const pages: Customer[][] = []
     for (let i = 0; i < customers.length; i += itemsPerPage) {
         pages.push(customers.slice(i, i + itemsPerPage))
@@ -45,19 +45,16 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                     className="page-container relative bg-white"
                     style={{
                         width: '100%',
-                        /* Reduce height to account for printer margins. 270mm is safe for A4/F4 */
                         height: 'auto',
-                        minHeight: 'auto',
-                        padding: '0',
+                        padding: '2mm 0', /* Vertical padding only, horz handled by width */
                         display: 'flex',
                         flexDirection: 'column',
-                        /* Use break-after for modern property, fallback to page-break-after */
                         breakAfter: pageIndex < pages.length - 1 ? 'page' : 'auto',
                         pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto'
                     }}
                 >
-                    {/* Items */}
-                    <div className="flex-1 flex flex-col justify-between" style={{ gap: '2mm' }}>
+                    {/* Centered Content Wrapper for Safe Margins */}
+                    <div style={{ width: '98%', margin: '0 auto', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0' }} className="text-[12px] leading-tight">
                         {pageCustomers.map((item, index) => {
                             // Format arrear months
                             const arrearMonthsList = item.arrears.arrearMonths
@@ -73,15 +70,16 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                         flexDirection: 'column',
                                         position: 'relative',
                                         justifyContent: 'center',
-                                        maxHeight: '40mm',
-                                        boxSizing: 'border-box'
+                                        maxHeight: '41.8mm', /* ABSOLUTE MAX for 7 items */
+                                        boxSizing: 'border-box',
+                                        padding: '1mm 0'
                                     }}
                                 >
                                     {/* Bordered Card */}
                                     <div style={{
-                                        border: '2px solid #000',
-                                        borderRadius: '8px',
-                                        padding: '5px 12px',
+                                        border: '1px solid #000',
+                                        borderRadius: '6px',
+                                        padding: '3px 10px',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         height: '100%',
@@ -102,10 +100,10 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                                 </div>
                                                 <div>
                                                     <h1 className="text-sm font-bold text-black leading-none">SABAMAS</h1>
-                                                    <p className="text-[10px] text-black leading-none mt-0.5">Sahabat Bersih Masyarakat</p>
+                                                    <p className="text-[10px] text-black leading-none mt-1">Sahabat Bersih Masyarakat</p>
                                                 </div>
                                             </div>
-                                            <div className="border border-black px-2 py-0.5 rounded text-[11px] font-bold text-black uppercase tracking-wider">
+                                            <div className="border border-black px-2 py-0.5 rounded text-[10px] font-bold text-black uppercase tracking-wider">
                                                 SURAT TAGIHAN
                                             </div>
                                         </div>
@@ -134,12 +132,12 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                         {/* Footer Row */}
                                         <div className="mt-1 pt-1 border-t border-gray-400 flex justify-between items-end">
                                             <div className="flex-1 pr-2">
-                                                <p className="text-[10px] text-black leading-snug break-words">
+                                                <p className="text-[11px] text-black leading-snug break-words">
                                                     <span className="font-bold text-black mr-1">Rincian:</span>
                                                     {arrearMonthsList || '-'}
                                                 </p>
                                             </div>
-                                            <div className="text-[10px] text-black font-bold">
+                                            <div className="text-[11px] text-black font-bold whitespace-nowrap ml-2">
                                                 {item.arrears.totalMonths} Bulan
                                             </div>
                                         </div>
@@ -159,7 +157,7 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    minHeight: '40mm'
+                                    minHeight: '41.8mm'
                                 }}
                             >
                                 <span className="text-gray-200 text-xs">Slot Kosong</span>
@@ -169,7 +167,8 @@ export function BulkBillPrintTemplate({ customers }: BulkBillPrintTemplateProps)
 
 
                 </div>
-            ))}
-        </div>
+            ))
+            }
+        </div >
     )
 }

@@ -344,22 +344,32 @@ class _BillingSearchScreenState extends State<BillingSearchScreen> {
         ),
         child: Row(
           children: [
-             Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: isDark ? theme.primaryColor.withOpacity(0.2) : const Color(0xFFEFF6FF),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  customer.nama.isNotEmpty ? customer.nama[0].toUpperCase() : '?',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: theme.primaryColor,
-                  ),
-                ),
+            ClipOval(
+              child: Image.asset(
+                'assets/images/customer-icon.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: isDark ? theme.primaryColor.withOpacity(0.2) : const Color(0xFFEFF6FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        customer.nama.isNotEmpty ? customer.nama[0].toUpperCase() : '?',
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: theme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),

@@ -63,10 +63,25 @@
 
 @media print {
   /* 
-     SIMPLE RELIABLE PRINT:
-     Prioritize layout correctness over ghost page elimination.
-     Complex hacks causing layout issues are removed.
+     OPTIMIZED PRINT SETTINGS:
+     - Remove browser header/footer
+     - Prevent ghost pages
+     - Clean output for thermal and A4 printers
   */
+
+  /* Remove browser default header/footer and margins */
+  @page {
+    margin: 0;
+  }
+
+  /* Reset body and html for clean print */
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
 
   body {
     visibility: hidden;
@@ -77,7 +92,9 @@
   nav,
   footer,
   aside,
-  .sidebar {
+  .sidebar,
+  .no-print,
+  button:not(.print-content-wrapper button) {
     display: none !important;
   }
 
@@ -90,30 +107,22 @@
   /* Only force block on the wrapper itself to override 'hidden' utility class */
   .print-content-wrapper {
     display: block !important;
-  }
-
-  .print-content-wrapper {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
     margin: 0 !important;
-
-    /* SAFE ZONE: Prevent printer hardware margins from cutting content */
-    padding-left: 5mm !important;
-    padding-right: 5mm !important;
-    padding-top: 5mm !important;
-    padding-bottom: 0 !important;
-
     background: white !important;
     z-index: 9999 !important;
+
+    /* Prevent page breaks inside receipt */
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* Hide common non-print elements */
-  .no-print,
-  button,
-  .sidebar {
-    display: none !important;
+  /* Prevent orphaned content creating ghost pages */
+  * {
+    box-sizing: border-box !important;
   }
 }
 

@@ -34,17 +34,24 @@ export default function ReceiptModal({ isOpen, onClose, payment }: ReceiptModalP
           <div className="grid grid-cols-1 gap-3">
             <Button
               onClick={() => {
-                const receipt = document.getElementById('payment-receipt');
-                if (receipt) {
-                  // Clean approach: Add class to isolate print content
-                  receipt.classList.add('print-content-wrapper');
-                  receipt.classList.add('print:block');
+                const a4Receipt = document.getElementById('payment-receipt');
+                const thermalReceipt = document.getElementById('payment-receipt-thermal');
+                const compactReceipt = document.getElementById('payment-receipt-compact');
+
+                // Hide other receipts
+                if (thermalReceipt) thermalReceipt.style.display = 'none';
+                if (compactReceipt) compactReceipt.style.display = 'none';
+
+                if (a4Receipt) {
+                  a4Receipt.classList.add('print-content-wrapper');
+                  a4Receipt.classList.add('print:block');
                   window.print();
 
-                  // Clean up after print dialog closes
                   setTimeout(() => {
-                    receipt.classList.remove('print-content-wrapper');
-                    receipt.classList.remove('print:block');
+                    a4Receipt.classList.remove('print-content-wrapper');
+                    a4Receipt.classList.remove('print:block');
+                    if (thermalReceipt) thermalReceipt.style.display = '';
+                    if (compactReceipt) compactReceipt.style.display = '';
                   }, 500);
                 }
               }}
@@ -57,14 +64,25 @@ export default function ReceiptModal({ isOpen, onClose, payment }: ReceiptModalP
 
             <Button
               onClick={() => {
-                const receipt = document.getElementById('payment-receipt-thermal');
-                if (receipt) {
-                  receipt.classList.add('print-content-wrapper');
-                  receipt.classList.add('print:block');
+                const thermalReceipt = document.getElementById('payment-receipt-thermal');
+                const a4Receipt = document.getElementById('payment-receipt');
+                const compactReceipt = document.getElementById('payment-receipt-compact');
+
+                // Hide other receipts
+                if (a4Receipt) a4Receipt.style.display = 'none';
+                if (compactReceipt) compactReceipt.style.display = 'none';
+
+                if (thermalReceipt) {
+                  thermalReceipt.classList.add('print-content-wrapper');
+                  thermalReceipt.classList.add('print:block');
                   window.print();
+
+                  // Restore after print
                   setTimeout(() => {
-                    receipt.classList.remove('print-content-wrapper');
-                    receipt.classList.remove('print:block');
+                    thermalReceipt.classList.remove('print-content-wrapper');
+                    thermalReceipt.classList.remove('print:block');
+                    if (a4Receipt) a4Receipt.style.display = '';
+                    if (compactReceipt) compactReceipt.style.display = '';
                   }, 500);
                 }
               }}
@@ -77,14 +95,24 @@ export default function ReceiptModal({ isOpen, onClose, payment }: ReceiptModalP
 
             <Button
               onClick={() => {
-                const receipt = document.getElementById('payment-receipt-compact');
-                if (receipt) {
-                  receipt.classList.add('print-content-wrapper');
-                  receipt.classList.add('print:block');
+                const compactReceipt = document.getElementById('payment-receipt-compact');
+                const a4Receipt = document.getElementById('payment-receipt');
+                const thermalReceipt = document.getElementById('payment-receipt-thermal');
+
+                // Hide other receipts
+                if (a4Receipt) a4Receipt.style.display = 'none';
+                if (thermalReceipt) thermalReceipt.style.display = 'none';
+
+                if (compactReceipt) {
+                  compactReceipt.classList.add('print-content-wrapper');
+                  compactReceipt.classList.add('print:block');
                   window.print();
+
                   setTimeout(() => {
-                    receipt.classList.remove('print-content-wrapper');
-                    receipt.classList.remove('print:block');
+                    compactReceipt.classList.remove('print-content-wrapper');
+                    compactReceipt.classList.remove('print:block');
+                    if (a4Receipt) a4Receipt.style.display = '';
+                    if (thermalReceipt) thermalReceipt.style.display = '';
                   }, 500);
                 }
               }}

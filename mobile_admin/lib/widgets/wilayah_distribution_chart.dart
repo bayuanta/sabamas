@@ -54,11 +54,66 @@ class WilayahDistributionChart extends StatelessWidget {
           if (sortedStats.length > 5)
              Center(
                child: TextButton(
-                 onPressed: () {}, 
+                 onPressed: () => _showAllWilayah(context, sortedStats),
                  child: Text('Lihat Semua (${sortedStats.length - 5} lainnya)', style: const TextStyle(fontSize: 12)),
-                ),
+               ),
              )
         ],
+      ),
+    );
+  }
+
+  void _showAllWilayah(BuildContext context, List<WilayahStat> allStats) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Semua Wilayah',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: ListView.builder(
+                  controller: controller,
+                  itemCount: allStats.length,
+                  itemBuilder: (context, index) {
+                    final stat = allStats[index];
+                    final maxCount = allStats.first.count > 0 ? allStats.first.count : 1;
+                    return _buildBarItem(context, stat, maxCount);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

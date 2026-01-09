@@ -106,7 +106,7 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
     const receiptId = customId || (isThermal ? 'payment-receipt-thermal' : isCompact ? 'payment-receipt-compact' : 'payment-receipt')
 
     if (isThermal) {
-        // Thermal Receipt (58mm width)
+        // Thermal Receipt (58mm width) - Redesigned
         return (
             <div id={receiptId}>
                 <style dangerouslySetInnerHTML={{
@@ -115,6 +115,13 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                         display: none;
                     }
                     @media print {
+                        html, body {
+                            width: 100%;
+                            height: 100vh !important; /* Force single page height */
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            overflow: hidden !important; /* Crop ghost content */
+                        }
                         @page {
                             margin: 0;
                             size: auto;
@@ -124,47 +131,41 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                             position: absolute;
                             left: 0;
                             top: 0;
-                            width: 58mm; /* Thermal is fixed width */
+                            width: 100%;
                             max-width: 58mm;
-                            /* Override global padding for thermal - it needs to be tight */
-                            padding: 0 1mm !important; 
+                            padding: 3mm 2mm !important; /* Jarak aman atas/kiri */
                             margin: 0 !important;
                             background: white;
                             font-family: 'Courier New', 'Consolas', monospace;
                             font-size: 8px;
-                            line-height: 1.2;
+                            line-height: 1.3;
                             color: #000;
                             box-sizing: border-box;
                         }
                     }
                 `}} />
 
-                {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: '2mm' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '0.5mm', letterSpacing: '0.5px' }}>SABAMAS</div>
-                    <div style={{ fontSize: '7px', marginBottom: '0.5mm' }}>Sistem Billing Sampah</div>
-                    <div style={{ fontSize: '8px', fontWeight: 'bold', marginTop: '1mm' }}>NOTA PEMBAYARAN</div>
+                {/* Header with double line */}
+                <div style={{ textAlign: 'center', paddingBottom: '1.5mm' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>SABAMAS</div>
+                    <div style={{ fontSize: '7px', marginTop: '0.5mm' }}>Sistem Billing Sampah</div>
                 </div>
+                <div style={{ borderTop: '2px double #000', marginBottom: '1.5mm' }}></div>
+                <div style={{ textAlign: 'center', fontSize: '9px', fontWeight: 'bold', marginBottom: '1.5mm' }}>NOTA PEMBAYARAN</div>
+                <div style={{ borderTop: '1px dashed #000', marginBottom: '1.5mm' }}></div>
 
-                <div style={{ borderTop: '1px dashed #000', margin: '1mm 0' }}></div>
-
-                {/* Transaction Info */}
-                <table style={{ width: '100%', fontSize: '7px', borderCollapse: 'collapse' }}>
+                {/* Transaction Info - Compact table */}
+                <table style={{ width: '100%', fontSize: '8px', borderCollapse: 'collapse', marginBottom: '1mm' }}>
                     <tbody>
                         <tr>
-                            <td style={{ padding: '0.5mm 0', width: '30%' }}>No</td>
-                            <td style={{ padding: '0.5mm 0', width: '5%' }}>:</td>
-                            <td style={{ padding: '0.5mm 0', fontWeight: 'bold' }}>{payment.id?.substring(0, 8) || '-'}</td>
+                            <td style={{ padding: '0.3mm 0', width: '25%' }}>No</td>
+                            <td style={{ padding: '0.3mm 0', width: '3%' }}>:</td>
+                            <td style={{ padding: '0.3mm 0', fontWeight: 'bold' }}>{payment.id?.substring(0, 8).toUpperCase() || '-'}</td>
                         </tr>
                         <tr>
-                            <td style={{ padding: '0.5mm 0' }}>Tgl</td>
-                            <td style={{ padding: '0.5mm 0' }}>:</td>
-                            <td style={{ padding: '0.5mm 0' }}>{paymentDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })}</td>
-                        </tr>
-                        <tr>
-                            <td style={{ padding: '0.5mm 0' }}>Jam</td>
-                            <td style={{ padding: '0.5mm 0' }}>:</td>
-                            <td style={{ padding: '0.5mm 0' }}>{paymentDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
+                            <td style={{ padding: '0.3mm 0' }}>Tanggal</td>
+                            <td style={{ padding: '0.3mm 0' }}>:</td>
+                            <td style={{ padding: '0.3mm 0' }}>{paymentDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })} {paymentDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -172,74 +173,76 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                 <div style={{ borderTop: '1px dashed #000', margin: '1mm 0' }}></div>
 
                 {/* Customer Info */}
-                <div style={{ marginBottom: '1mm' }}>
-                    <div style={{ fontSize: '7px', fontWeight: 'bold', marginBottom: '0.5mm' }}>PELANGGAN:</div>
-                    <div style={{ fontSize: '8px', fontWeight: 'bold' }}>{customer?.nama || payment.customer_nama}</div>
-                    {customer?.alamat && <div style={{ fontSize: '6px', marginTop: '0.3mm' }}>{customer.alamat}</div>}
-                    {customer?.wilayah && <div style={{ fontSize: '6px' }}>{customer.wilayah}</div>}
+                <div style={{ marginBottom: '1.5mm' }}>
+                    <div style={{ fontSize: '7px', fontWeight: 'bold', marginBottom: '0.5mm', textTransform: 'uppercase' }}>Pelanggan:</div>
+                    <div style={{ fontSize: '9px', fontWeight: 'bold' }}>{customer?.nama || payment.customer_nama}</div>
+                    {customer?.wilayah && <div style={{ fontSize: '7px', marginTop: '0.3mm' }}>{customer.wilayah}</div>}
                 </div>
 
                 <div style={{ borderTop: '1px dashed #000', margin: '1mm 0' }}></div>
 
-                {/* Items */}
-                <div style={{ fontSize: '7px', fontWeight: 'bold', marginBottom: '0.5mm' }}>RINCIAN:</div>
-                {paidMonths.map((month: string, index: number) => (
-                    <div key={month} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5mm 0', fontSize: '7px' }}>
-                        <span style={{ flex: 1 }}>{index + 1}. {formatMonth(month)}</span>
-                        <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap', marginLeft: '2mm' }}>{formatCurrency(getMonthAmount(month))}</span>
-                    </div>
-                ))}
+                {/* Items Header */}
+                <div style={{ fontSize: '7px', fontWeight: 'bold', marginBottom: '1mm', textTransform: 'uppercase' }}>Rincian Pembayaran:</div>
 
-                <div style={{ borderTop: '1px solid #000', margin: '1mm 0' }}></div>
+                {/* Items List */}
+                <table style={{ width: '100%', fontSize: '8px', borderCollapse: 'collapse' }}>
+                    <tbody>
+                        {paidMonths.map((month: string, index: number) => (
+                            <tr key={month}>
+                                <td style={{ padding: '0.5mm 0', width: '15px' }}>{index + 1}.</td>
+                                <td style={{ padding: '0.5mm 0' }}>{formatMonth(month)}</td>
+                                <td style={{ padding: '0.5mm 0', textAlign: 'right', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{formatCurrency(getMonthAmount(month))}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
 
-                {/* Total */}
-                <table style={{ width: '100%', fontSize: '8px', marginBottom: '1mm' }}>
+                <div style={{ borderTop: '1px solid #000', margin: '1.5mm 0' }}></div>
+
+                {/* Total Section */}
+                <table style={{ width: '100%', fontSize: '8px', borderCollapse: 'collapse' }}>
                     <tbody>
                         {payment.subtotal && payment.diskon_nominal && payment.diskon_nominal > 0 ? (
                             <>
                                 <tr>
-                                    <td style={{ padding: '0.5mm 0', fontSize: '7px' }}>Subtotal</td>
-                                    <td style={{ padding: '0.5mm 0', textAlign: 'right', fontSize: '7px' }}>{formatCurrency(payment.subtotal)}</td>
+                                    <td style={{ padding: '0.3mm 0' }}>Subtotal</td>
+                                    <td style={{ padding: '0.3mm 0', textAlign: 'right' }}>{formatCurrency(payment.subtotal)}</td>
                                 </tr>
                                 <tr>
-                                    <td style={{ padding: '0.5mm 0', fontSize: '7px' }}>Diskon</td>
-                                    <td style={{ padding: '0.5mm 0', textAlign: 'right', fontSize: '7px' }}>-{formatCurrency(payment.diskon_nominal)}</td>
+                                    <td style={{ padding: '0.3mm 0' }}>Diskon</td>
+                                    <td style={{ padding: '0.3mm 0', textAlign: 'right' }}>-{formatCurrency(payment.diskon_nominal)}</td>
                                 </tr>
                                 <tr style={{ borderTop: '1px solid #000' }}>
-                                    <td style={{ padding: '0.5mm 0', fontWeight: 'bold' }}>TOTAL</td>
-                                    <td style={{ padding: '0.5mm 0', textAlign: 'right', fontWeight: 'bold', fontSize: '9px' }}>{formatCurrency(payment.jumlah_bayar)}</td>
+                                    <td style={{ padding: '0.5mm 0', fontWeight: 'bold', fontSize: '9px' }}>TOTAL</td>
+                                    <td style={{ padding: '0.5mm 0', textAlign: 'right', fontWeight: 'bold', fontSize: '10px' }}>{formatCurrency(payment.jumlah_bayar)}</td>
                                 </tr>
                             </>
                         ) : (
                             <tr>
-                                <td style={{ padding: '0.5mm 0', fontWeight: 'bold' }}>TOTAL</td>
-                                <td style={{ padding: '0.5mm 0', textAlign: 'right', fontWeight: 'bold', fontSize: '9px' }}>{formatCurrency(payment.jumlah_bayar)}</td>
+                                <td style={{ padding: '0.5mm 0', fontWeight: 'bold', fontSize: '9px' }}>TOTAL</td>
+                                <td style={{ padding: '0.5mm 0', textAlign: 'right', fontWeight: 'bold', fontSize: '10px' }}>{formatCurrency(payment.jumlah_bayar)}</td>
                             </tr>
                         )}
                         <tr>
-                            <td style={{ padding: '0.5mm 0', fontSize: '7px' }}>Metode</td>
-                            <td style={{ padding: '0.5mm 0', textAlign: 'right', fontWeight: 'bold', fontSize: '7px' }}>{payment.metode_bayar.toUpperCase()}</td>
+                            <td style={{ padding: '0.3mm 0', fontSize: '7px' }}>Metode</td>
+                            <td style={{ padding: '0.3mm 0', textAlign: 'right', fontWeight: 'bold', fontSize: '8px' }}>{payment.metode_bayar.toUpperCase()}</td>
                         </tr>
                     </tbody>
                 </table>
 
-
-                {/* Partial Payment Info - Simplified */}
+                {/* Partial Payment Info */}
                 {isPartialPayment && partialPaymentInfo && partialPaymentInfo.length > 0 && (() => {
-                    // Only show months with remaining balance (cicilan)
                     const cicilanMonths = partialPaymentInfo.filter(p => p.sisa_tagihan > 0)
                     if (cicilanMonths.length === 0) return null
 
                     return (
                         <>
-                            <div style={{ borderTop: '1px dashed #000', margin: '1mm 0' }}></div>
+                            <div style={{ borderTop: '1px dashed #000', margin: '1.5mm 0' }}></div>
+                            <div style={{ fontSize: '7px', fontWeight: 'bold', marginBottom: '0.5mm' }}>SISA TAGIHAN:</div>
                             {cicilanMonths.map((info, idx) => (
-                                <div key={idx} style={{ fontSize: '6px', marginBottom: '0.5mm' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                                        <span>{formatMonth(info.bulan_tagihan)} (Cicilan {info.payment_ids.length}x)</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3mm' }}>
-                                        <span>Sisa Tagihan:</span>
+                                <div key={idx} style={{ fontSize: '7px', marginBottom: '0.5mm' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{formatMonth(info.bulan_tagihan)}</span>
                                         <span style={{ fontWeight: 'bold' }}>{formatCurrency(info.sisa_tagihan)}</span>
                                     </div>
                                 </div>
@@ -248,6 +251,7 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                     )
                 })()}
 
+                {/* Notes */}
                 {payment.catatan && (
                     <>
                         <div style={{ borderTop: '1px dashed #000', margin: '1mm 0' }}></div>
@@ -257,32 +261,17 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                     </>
                 )}
 
-                <div style={{ borderTop: '1px dashed #000', margin: '1.5mm 0' }}></div>
-
-                {/* Footer */}
-                <div style={{ textAlign: 'center', marginTop: '2mm' }}>
-                    <div style={{
-                        display: 'inline-block',
-                        minWidth: '25mm',
-                        paddingTop: '0.5mm'
-                    }}>
-
-                    </div>
-                </div>
-
-                <div style={{ borderTop: '1px dashed #000', margin: '1.5mm 0' }}></div>
-
-                <div style={{ textAlign: 'center', fontSize: '7px', marginTop: '1mm' }}>
-                    <div style={{ fontWeight: 'bold' }}>Terima Kasih</div>
-                    <div style={{ marginTop: '0.5mm', fontSize: '6px' }}>Simpan struk ini</div>
-                    <div style={{ fontSize: '5px', marginTop: '0.5mm', color: '#666' }}>
+                {/* Footer with double line */}
+                <div style={{ borderTop: '2px double #000', margin: '2mm 0 1mm' }}></div>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '8px', fontWeight: 'bold' }}>Terima Kasih</div>
+                    <div style={{ fontSize: '6px', marginTop: '0.5mm' }}>Simpan struk ini sebagai bukti</div>
+                    <div style={{ fontSize: '5px', marginTop: '1mm', color: '#666' }}>
                         {currentDate.toLocaleDateString('id-ID', {
                             day: '2-digit',
                             month: 'short',
-                            year: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
+                            year: '2-digit'
+                        })} {currentDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
             </div>
@@ -299,6 +288,13 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                         display: none;
                     }
                     @media print {
+                        html, body {
+                            width: 100%;
+                            height: 100vh !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            overflow: hidden !important;
+                        }
                         #${receiptId} {
                             display: block !important;
                             position: absolute;
@@ -306,13 +302,16 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                             top: 0;
                             width: 100%;
                             max-width: 215.9mm;
-                            margin: 0;
-                            padding: 0;
+                            height: auto; /* Let content dictate height */
+                            margin: 0 !important;
+                            padding: 10mm !important; /* Reduced padding (safe) */
                             font-family: 'Times New Roman', serif;
                             font-size: 10pt;
                             line-height: 1.3;
                             color: #000;
                             background: white;
+                            box-sizing: border-box;
+                            overflow: hidden;
                         }
                     }
                 `}} />
@@ -567,26 +566,27 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                         display: none;
                     }
                     @media print {
-                        @page {
-                            margin: 0;
-                            size: auto;
+                        html, body {
+                            width: 100%;
+                            height: 100vh !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            overflow: hidden !important;
                         }
                         #${receiptId} {
                             display: block !important;
                             position: absolute;
                             left: 0;
                             top: 0;
-                            /* Safe width to avoid printer margins cutting off content */
-                            width: 100%; 
-                            max-width: 100%;
+                            width: 100%;
                             height: auto;
-                            min-height: 0;
-                            padding: 10mm; /* Reduced to 10mm to prevent spillover */
+                            padding: 10mm !important; /* Reduced padding to prevent ghost page */
+                            margin: 0 !important;
                             background: white;
                             font-family: 'Times New Roman', serif;
                             color: #000;
                             box-sizing: border-box;
-                            overflow: hidden; /* Clip everything strictly to one page */
+                            overflow: hidden;
                         }
                     }
                 `}} />
@@ -616,14 +616,14 @@ export default function PaymentReceipt({ payment, customer, partialPaymentInfo, 
                     />
                 )}
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                    <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                         {settings?.app_name || 'SABAMAS'}
                     </h1>
-                    <p style={{ margin: '5px 0 0', fontSize: '14px' }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px' }}>
                         {settings?.app_description || 'Sistem Billing Sampah Masyarakat'}
                     </p>
-                    <p style={{ margin: '2px 0', fontSize: '12px' }}>Dukuh Ngumbul RT 02/RW 02 Desa Kemasan Kecamatan Sawit Kabupaten Boyolali 57374 Provinsi Jawa Tengah</p>
-                    <p style={{ margin: '2px 0', fontSize: '12px' }}>Telp: +62 858 6771 4590</p>
+                    <p style={{ margin: '2px 0', fontSize: '10px' }}>Dukuh Ngumbul RT 02/RW 02 Desa Kemasan Kec. Sawit Kab. Boyolali 57374</p>
+                    <p style={{ margin: '2px 0', fontSize: '10px' }}>Telp: +62 858 6771 4590</p>
                 </div>
                 <div style={{ width: '80px' }}></div>
             </div>

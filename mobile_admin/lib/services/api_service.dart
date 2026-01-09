@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -410,9 +411,16 @@ class Payment {
 
   factory Payment.fromJson(Map<String, dynamic> json) {
     List<String> parsedBulan = [];
-    if (json['bulan_dibayar'] is List) {
-      parsedBulan = List<String>.from(json['bulan_dibayar']);
-    }
+    try {
+      if (json['bulan_dibayar'] is List) {
+        parsedBulan = List<String>.from(json['bulan_dibayar']);
+      } else if (json['bulan_dibayar'] is String) {
+        final decoded = jsonDecode(json['bulan_dibayar']);
+        if (decoded is List) {
+          parsedBulan = List<String>.from(decoded);
+        }
+      }
+    } catch (_) {}
 
     return Payment(
       id: json['id']?.toString() ?? '',

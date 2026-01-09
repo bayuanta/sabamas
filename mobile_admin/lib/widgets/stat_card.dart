@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mobile_admin/widgets/chart_background_painter.dart';
 
-class StatCard extends StatelessWidget {
+class StatCard extends StatefulWidget {
   final String title;
   final String value;
+  final String? fullValue; // The raw/full formatted value to show on tap
   final IconData icon; // Icon at top right (Blue colored usually)
   final String trend; // Percentage e.g. "15,5%"
   final bool isTrendUp; // Determines Green vs Red badge
@@ -19,6 +21,7 @@ class StatCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.value,
+    this.fullValue,
     required this.icon,
     required this.trend,
     this.isTrendUp = true,
@@ -31,15 +34,18 @@ class StatCard extends StatelessWidget {
   });
 
   @override
+  State<StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<StatCard> {
+  bool _showFullValue = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Determine badge colors based on trend direction & theme
-    // Dark Mode: Darker background, Lighter Text
-    // Light Mode: Very Light background, Darker Text
-    
-    final isBadState = (isNegative || !isTrendUp);
+    final isBadState = (widget.isNegative || !widget.isTrendUp);
     
     Color badgeBgColor;
     Color badgeTextColor;
@@ -59,7 +65,7 @@ class StatCard extends StatelessWidget {
         : Icons.arrow_drop_up;
 
     return InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -78,96 +84,127 @@ class StatCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
           children: [
-            // Row 1: Title and Icon
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
+            // Background Chart Effect
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CustomPaint(
+                  painter: ChartBackgroundPainter(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1) 
+                        : theme.primaryColor.withValues(alpha: 0.07),
+                    isNegative: false,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  icon,
-                  size: 20,
-                  color: theme.primaryColor,
-                ),
-              ],
-            ),
-            
-            const Spacer(), 
-
-            // Row 2: Value (Big Number)
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
-                  letterSpacing: -0.5,
                 ),
               ),
             ),
-
-            const Spacer(),
-
-            // Row 3: Trend Badge & Subtext
-            Row(
+            
+            // Content
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeBgColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(trendIcon, size: 14, color: badgeTextColor),
-                      const SizedBox(width: 2),
-                      Text(
-                        trend,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: badgeTextColor,
+                // Row 1: Title and Icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          widget.title,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      widget.icon,
+                      size: 20,
+                      color: theme.primaryColor,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Expanded(
+                
+                const Spacer(), 
+
+                // Row 2: Value (Big Number)
+                GestureDetector(
+                  onTap: () {
+                    if (widget.fullValue != null) {
+                      setState(() {
+                        _showFullValue = !_showFullValue;
+                      });
+                    } else if (widget.onTap != null) {
+                       widget.onTap!();
+                    }
+                  },
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      subtext,
+                      _showFullValue ? (widget.fullValue ?? widget.value) : widget.value,
                       style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: theme.textTheme.bodySmall?.color,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ),
+                ),
+
+                const Spacer(),
+
+                // Row 3: Trend Badge & Subtext
+                Row(
+                  children: [
+                    // Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: badgeBgColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(trendIcon, size: 14, color: badgeTextColor),
+                          const SizedBox(width: 2),
+                          Text(
+                            widget.trend,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: badgeTextColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          widget.subtext,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

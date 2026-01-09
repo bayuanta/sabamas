@@ -1030,12 +1030,24 @@ function BillingContent() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const receipt = document.getElementById('payment-receipt');
-                  if (receipt) {
-                    receipt.style.display = 'block';
+                  const a4Receipt = document.getElementById('payment-receipt');
+                  const thermalReceipt = document.getElementById('payment-receipt-thermal');
+                  const compactReceipt = document.getElementById('payment-receipt-compact');
+
+                  // Hide other receipts
+                  if (thermalReceipt) thermalReceipt.style.display = 'none';
+                  if (compactReceipt) compactReceipt.style.display = 'none';
+
+                  if (a4Receipt) {
+                    a4Receipt.classList.add('print-content-wrapper');
+
                     setTimeout(() => {
                       window.print();
-                      receipt.style.display = 'none';
+                      setTimeout(() => {
+                        a4Receipt.classList.remove('print-content-wrapper');
+                        if (thermalReceipt) thermalReceipt.style.display = '';
+                        if (compactReceipt) compactReceipt.style.display = '';
+                      }, 500);
                     }, 100);
                   }
                 }}
@@ -1048,13 +1060,22 @@ function BillingContent() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const receipt = document.getElementById('payment-receipt-thermal');
-                  if (receipt) {
-                    receipt.style.display = 'block';
+                  const thermalReceipt = document.getElementById('payment-receipt-thermal');
+                  const a4Receipt = document.getElementById('payment-receipt');
+                  const compactReceipt = document.getElementById('payment-receipt-compact');
+
+                  // Hide other receipts
+                  if (a4Receipt) a4Receipt.style.display = 'none';
+                  if (compactReceipt) compactReceipt.style.display = 'none';
+
+                  if (thermalReceipt) {
+                    thermalReceipt.classList.add('print-content-wrapper');
+                    window.print();
                     setTimeout(() => {
-                      window.print();
-                      receipt.style.display = 'none';
-                    }, 100);
+                      thermalReceipt.classList.remove('print-content-wrapper');
+                      if (a4Receipt) a4Receipt.style.display = '';
+                      if (compactReceipt) compactReceipt.style.display = '';
+                    }, 500);
                   }
                 }}
                 className="w-full"
@@ -1066,13 +1087,22 @@ function BillingContent() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const receipt = document.getElementById('payment-receipt-compact');
-                  if (receipt) {
-                    receipt.style.display = 'block';
+                  const compactReceipt = document.getElementById('payment-receipt-compact');
+                  const a4Receipt = document.getElementById('payment-receipt');
+                  const thermalReceipt = document.getElementById('payment-receipt-thermal');
+
+                  // Hide other receipts
+                  if (a4Receipt) a4Receipt.style.display = 'none';
+                  if (thermalReceipt) thermalReceipt.style.display = 'none';
+
+                  if (compactReceipt) {
+                    compactReceipt.classList.add('print-content-wrapper');
+                    window.print();
                     setTimeout(() => {
-                      window.print();
-                      receipt.style.display = 'none';
-                    }, 100);
+                      compactReceipt.classList.remove('print-content-wrapper');
+                      if (a4Receipt) a4Receipt.style.display = '';
+                      if (thermalReceipt) thermalReceipt.style.display = '';
+                    }, 500);
                   }
                 }}
                 className="w-full"
