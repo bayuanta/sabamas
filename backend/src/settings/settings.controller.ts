@@ -2,12 +2,15 @@ import { Controller, Get, Put, Body, UseGuards, UploadedFile, UseInterceptors } 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { SettingsService } from './settings.service';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { SupabaseService } from '../common/supabase.service';
+import { memoryStorage } from 'multer';
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) { }
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly supabaseService: SupabaseService
+  ) { }
 
   @Get()
   async getSettings() {
@@ -24,13 +27,7 @@ export class SettingsController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: './uploads/logo',
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `logo-${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|svg\+xml)$/)) {
           return cb(new Error('Only image files are allowed!'), false);
@@ -47,12 +44,15 @@ export class SettingsController {
       throw new Error('No file uploaded');
     }
 
-    const logoPath = `/uploads/logo/${file.filename}`;
-    await this.settingsService.updateSettings({ logo: logoPath });
+    // Upload to Supabase Storage instead of local disk
+    const logoUrl = await this.supabaseService.uploadFile(file, 'sabamas-uploads', 'logo');
+
+    // Update settings in database with the new URL
+    await this.settingsService.updateSettings({ logo: logoUrl });
 
     return {
-      message: 'Logo uploaded successfully',
-      logo: logoPath,
+      message: 'Logo uploaded successfully to Cloud Storage',
+      logo: logoUrl,
     };
   }
 }
