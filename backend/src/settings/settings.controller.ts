@@ -28,8 +28,8 @@ export class SettingsController {
   @UseInterceptors(
     FileInterceptor('logo', {
       storage: memoryStorage(),
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|svg\+xml)$/)) {
+      fileFilter: (req, logo, cb) => {
+        if (!logo.mimetype.match(/\/(jpg|jpeg|png|gif|svg\+xml)$/)) {
           return cb(new Error('Only image files are allowed!'), false);
         }
         cb(null, true);
