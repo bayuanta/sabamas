@@ -162,9 +162,9 @@ export default function BulkPaymentReceipt({ payments, isThermal = false }: Bulk
     // Helper to construct logo URL
     const getLogoUrl = (logoPath: string) => {
         if (!logoPath) return ''
-        // Remove /api if present at the end of API_URL
-        const baseUrl = API_URL.replace(/\/api\/?$/, '')
-        // Ensure logoPath starts with /
+        if (logoPath.startsWith('http')) return logoPath
+        
+        const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '')
         const cleanPath = logoPath.startsWith('/') ? logoPath : `/${logoPath}`
         return `${baseUrl}${cleanPath}`
     }

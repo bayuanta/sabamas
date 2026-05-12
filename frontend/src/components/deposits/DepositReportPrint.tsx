@@ -69,7 +69,7 @@ const DepositReportPrint = React.forwardRef<HTMLDivElement, DepositReportPrintPr
             <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
                 {settings?.logo || (typeof window !== 'undefined' && window.localStorage.getItem('logo_url')) ? (
                     <img
-                        src={typeof window !== 'undefined' ? (window.localStorage.getItem('logo_url') || `${API_URL}${settings?.logo}`) : `${API_URL}${settings?.logo}`}
+                        src={typeof window !== 'undefined' ? (window.localStorage.getItem('logo_url') || (settings?.logo?.startsWith('http') ? settings.logo : `${API_URL.replace(/\/api\/?$/, '')}${settings?.logo}`)) : (settings?.logo?.startsWith('http') ? settings.logo : `${API_URL.replace(/\/api\/?$/, '')}${settings?.logo}`)}
                         alt="Logo"
                         onError={(e) => {
                             e.currentTarget.style.display = 'none';

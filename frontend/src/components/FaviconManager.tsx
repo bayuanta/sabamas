@@ -21,7 +21,8 @@ export default function FaviconManager() {
     useEffect(() => {
         if (settings?.logo) {
             // Store logo URL in localStorage for print templates to access synchronously/easily
-            const logoUrl = `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '')}${settings.logo}`
+            const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '');
+            const logoUrl = settings.logo.startsWith('http') ? settings.logo : `${baseUrl}${settings.logo.startsWith('/') ? '' : '/'}${settings.logo}`;
             localStorage.setItem('logo_url', logoUrl)
 
             // Update Favicon
