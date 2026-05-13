@@ -72,13 +72,16 @@ export default function PortalLoginPage() {
             <Link href="/" className="inline-block group">
               <div className="flex justify-center mb-6 transition-transform group-hover:scale-105 duration-300">
                 {settings?.logo ? (
-                  <div className="w-24 h-24 relative">
-                    <img
-                      src={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '')}${settings.logo}?t=${new Date().getTime()}`}
-                      alt="Logo"
-                      className="w-full h-full object-contain drop-shadow-md"
-                    />
-                  </div>
+                    <div className="w-24 h-24 relative">
+                      <img
+                        src={settings.logo.startsWith('http') 
+                          ? `${settings.logo}?t=${new Date().getTime()}` 
+                          : `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '')}${settings.logo}?t=${new Date().getTime()}`
+                        }
+                        alt="Logo"
+                        className="w-full h-full object-contain drop-shadow-md"
+                      />
+                    </div>
                 ) : (
                   <div className="w-20 h-20 bg-brote-base/5 rounded-2xl flex items-center justify-center text-brote-base shadow-sm ring-4 ring-white">
                     <Leaf className="w-10 h-10" />

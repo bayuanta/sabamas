@@ -315,7 +315,9 @@ export default function SettingsPage() {
             ) : settings?.logo ? (
               <img src={(() => {
                 const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '');
-                const logoUrl = settings.logo.startsWith('http') ? settings.logo : `${baseUrl}${settings.logo.startsWith('/') ? '' : '/'}${settings.logo}`;
+                const logoUrl = settings.logo.startsWith('http') 
+                  ? settings.logo 
+                  : `${baseUrl}${settings.logo.startsWith('/') ? '' : '/'}${settings.logo}`;
                 return logoUrl;
               })()} alt="Current Logo" className="max-h-32 object-contain" />
             ) : (

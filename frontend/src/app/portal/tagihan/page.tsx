@@ -97,7 +97,9 @@ export default function PortalTagihanPage() {
       if (settings?.logo) {
         try {
           // Fetch logo
-          const logoUrl = API_URL.replace(/\/api\/?$/, '') + (settings.logo.startsWith('/') ? '' : '/') + settings.logo
+          const logoUrl = settings.logo.startsWith('http') 
+            ? settings.logo 
+            : API_URL.replace(/\/api\/?$/, '') + (settings.logo.startsWith('/') ? '' : '/') + settings.logo
           const img = new Image()
           img.src = logoUrl
           // Wait for image to load
