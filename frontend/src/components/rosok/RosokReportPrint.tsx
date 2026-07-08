@@ -47,18 +47,18 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 20mm;
+            padding: 15mm;
             background: white;
             }
             @page {
-            size: A4 landscape;
+            size: A4 portrait;
             margin: 0;
             }
         }
         #${reportId} {
-            width: 297mm; /* Landscape */
-            min-height: 210mm;
-            padding: 20mm;
+            width: 210mm; /* Portrait */
+            min-height: 297mm;
+            padding: 15mm;
             background: white;
             font-family: 'Times New Roman', serif;
             color: #000;
@@ -67,7 +67,7 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
         `}} />
 
             {/* Header */}
-            <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
                 {settings?.logo || (typeof window !== 'undefined' && window.localStorage.getItem('logo_url')) ? (
                     <img
                         src={typeof window !== 'undefined' ? (window.localStorage.getItem('logo_url') || `${API_URL}${settings?.logo}`) : `${API_URL}${settings?.logo}`}
@@ -77,73 +77,75 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
                             const parent = e.currentTarget.parentElement;
                             if (parent) {
                                 parent.innerHTML = `
-                                    <div style="width: 60px; height: 60px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">S</div>
+                                    <div style="width: 50px; height: 50px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">S</div>
                                 `;
                             }
                         }}
-                        style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+                        style={{ width: '50px', height: '50px', objectFit: 'contain' }}
                     />
                 ) : (
-                    <div style={{ width: '60px', height: '60px', border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold' }}>
+                    <div style={{ width: '50px', height: '50px', border: '2px solid #000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 'bold' }}>
                         S
                     </div>
                 )}
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                    <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                         {settings?.app_name || 'SABAMAS'}
                     </h1>
-                    <p style={{ margin: '5px 0 0', fontSize: '12px' }}>
+                    <p style={{ margin: '3px 0 0', fontSize: '11px' }}>
                         {settings?.app_description || 'Sistem Pengelolaan Sampah & Barang Bekas'}
                     </p>
-                    <p style={{ margin: '2px 0', fontSize: '11px' }}>Dukuh Ngumbul RT 02/RW 02 Desa Kemasan Kecamatan Sawit Kabupaten Boyolali 57374 Provinsi Jawa Tengah</p>
-                    <p style={{ margin: '2px 0', fontSize: '11px' }}>Telp: +62 858 6771 4590</p>
+                    <p style={{ margin: '2px 0', fontSize: '10px' }}>Dukuh Ngumbul RT 02/RW 02 Desa Kemasan Kecamatan Sawit Kabupaten Boyolali 57374 Provinsi Jawa Tengah</p>
+                    <p style={{ margin: '2px 0', fontSize: '10px' }}>Telp: +62 858 6771 4590</p>
                 </div>
-                <div style={{ width: '60px' }}></div>
+                <div style={{ width: '50px' }}></div>
             </div>
 
             {/* Title */}
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase' }}>LAPORAN PENJUALAN ROSOK</h2>
-                {period && <p style={{ margin: '5px 0 0', fontSize: '12px' }}>Periode: {period}</p>}
+            <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>LAPORAN DETAIL PENJUALAN ROSOK</h2>
+                {period && <p style={{ margin: '4px 0 0', fontSize: '11px' }}>Periode: {period}</p>}
             </div>
 
             {/* Table */}
             <div style={{ marginBottom: '20px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '10px' }}>
                     <thead>
                         <tr style={{ backgroundColor: '#f0f0f0' }}>
-                            <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', width: '30px' }}>No</th>
-                            <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', width: '80px' }}>Tanggal</th>
-                            <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>Pembeli</th>
-                            <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'left' }}>Resume Barang (Jenis - Berat - Harga)</th>
-                            <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '70px' }}>Tot. Berat</th>
-                            <th style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', width: '100px' }}>Tot. Harga (Rp)</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'center', width: '25px' }}>No</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'left', width: '65px' }}>Tanggal</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'left' }}>Pembeli</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'left' }}>Jenis Barang</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'right', width: '50px' }}>Berat</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'right', width: '70px' }}>Harga/kg</th>
+                            <th style={{ border: '1px solid #000', padding: '5px', textAlign: 'right', width: '80px' }}>Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {sales.map((sale, index) => {
-                            const saleTotalWeight = sale.items.reduce((acc: number, item: any) => acc + item.berat, 0);
-                            const itemDetails = sale.items.map((item: any) =>
-                                `${item.jenis_barang} (${item.berat}kg @${formatCurrency(item.harga_per_kg).replace('Rp', '').trim()})`
-                            ).join(', ');
-
-                            return (
-                                <tr key={sale.id}>
-                                    <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>{index + 1}</td>
-                                    <td style={{ border: '1px solid #000', padding: '6px' }}>{format(new Date(sale.tanggal), 'dd/MM/yyyy')}</td>
-                                    <td style={{ border: '1px solid #000', padding: '6px' }}>{sale.pembeli || '-'}</td>
-                                    <td style={{ border: '1px solid #000', padding: '6px' }}>{itemDetails}</td>
-                                    <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>{saleTotalWeight.toFixed(2)}</td>
-                                    <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>{formatCurrency(sale.total_harga).replace('Rp', '').trim()}</td>
+                        {sales.map((sale, saleIndex) => {
+                            return sale.items.map((item: any, itemIndex: number) => (
+                                <tr key={`${sale.id}-${itemIndex}`}>
+                                    {itemIndex === 0 && (
+                                        <>
+                                            <td rowSpan={sale.items.length} style={{ border: '1px solid #000', padding: '5px', textAlign: 'center', verticalAlign: 'top' }}>{saleIndex + 1}</td>
+                                            <td rowSpan={sale.items.length} style={{ border: '1px solid #000', padding: '5px', verticalAlign: 'top' }}>{format(new Date(sale.tanggal), 'dd/MM/yyyy')}</td>
+                                            <td rowSpan={sale.items.length} style={{ border: '1px solid #000', padding: '5px', verticalAlign: 'top' }}>{sale.pembeli || '-'}</td>
+                                        </>
+                                    )}
+                                    <td style={{ border: '1px solid #000', padding: '5px' }}>{item.jenis_barang}</td>
+                                    <td style={{ border: '1px solid #000', padding: '5px', textAlign: 'right' }}>{item.berat} kg</td>
+                                    <td style={{ border: '1px solid #000', padding: '5px', textAlign: 'right' }}>{formatCurrency(item.harga_per_kg).replace('Rp', '').trim()}</td>
+                                    <td style={{ border: '1px solid #000', padding: '5px', textAlign: 'right' }}>{formatCurrency(item.total_harga).replace('Rp', '').trim()}</td>
                                 </tr>
-                            )
+                            ))
                         })}
                     </tbody>
                     <tfoot>
                         <tr style={{ fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
-                            <td colSpan={4} style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>TOTAL KESELURUHAN</td>
-                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>{totalWeight.toFixed(2)} kg</td>
-                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>
+                            <td colSpan={4} style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>TOTAL KESELURUHAN</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>{totalWeight.toFixed(2)} kg</td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}></td>
+                            <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right' }}>
                                 {formatCurrency(totalRevenue)}
                             </td>
                         </tr>

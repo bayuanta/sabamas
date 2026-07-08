@@ -138,7 +138,7 @@ export default function RosokSaleList() {
             const timer = setTimeout(async () => {
                 try {
                     const { generatePDF } = await import('@/lib/pdf')
-                    await generatePDF('rosok-report-print', `Laporan_Rosok_${startDate || 'Semua'}_sd_${endDate || 'Semua'}.pdf`, { format: 'a4', orientation: 'l' })
+                    await generatePDF('rosok-report-print', `Laporan_Rosok_${startDate || 'Semua'}_sd_${endDate || 'Semua'}.pdf`, { format: 'a4', orientation: 'p' })
                     toast.success('PDF berhasil diunduh')
                 } catch (e) {
                     toast.error('Gagal mengunduh PDF')
