@@ -47,7 +47,7 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 15mm;
+            padding: 5mm 15mm 15mm 15mm;
             background: white;
             }
             @page {
@@ -58,7 +58,7 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
         #${reportId} {
             width: 210mm; /* Portrait */
             min-height: 297mm;
-            padding: 15mm;
+            padding: 5mm 15mm 15mm 15mm;
             background: white;
             font-family: 'Times New Roman', serif;
             color: #000;
@@ -154,7 +154,7 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
             </div>
 
             {/* Footer Info */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px', pageBreakInside: 'avoid' }}>
                 <div style={{ textAlign: 'center', width: '200px' }}>
                     <p>Dicetak pada: {format(currentDate, 'dd MMMM yyyy HH:mm', { locale: id })}</p>
                     <div style={{ height: '60px' }}></div>
