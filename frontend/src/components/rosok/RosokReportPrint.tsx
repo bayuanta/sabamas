@@ -153,14 +153,7 @@ const RosokReportPrint = React.forwardRef<HTMLDivElement, RosokReportPrintProps>
                 </table>
             </div>
 
-            {/* Footer Info */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '30px', pageBreakInside: 'avoid' }}>
-                <div style={{ textAlign: 'center', width: '200px' }}>
-                    <p>Dicetak pada: {format(currentDate, 'dd MMMM yyyy HH:mm', { locale: id })}</p>
-                    <div style={{ height: '60px' }}></div>
-                    <p style={{ borderTop: '1px solid #000', paddingTop: '5px' }}>Admin Sabamas</p>
-                </div>
-            </div>
+
         </div>
     )
 })
