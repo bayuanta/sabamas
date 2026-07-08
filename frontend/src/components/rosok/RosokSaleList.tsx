@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { rosokApi } from '@/lib/api'
-import { Search, AlertCircle, Printer, X, Filter, Calendar as CalendarIcon, Wallet, Scale, LayoutGrid, LayoutList, Square, CheckSquare, Edit2, Trash2, Eye, Plus } from 'lucide-react'
+import { Search, AlertCircle, Printer, X, Filter, Calendar as CalendarIcon, Wallet, Scale, LayoutGrid, LayoutList, Square, CheckSquare, Edit2, Trash2, Eye, Plus, Download } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import RosokSaleForm from './RosokSaleForm'
 import { toast } from 'react-hot-toast'
@@ -28,6 +28,8 @@ export default function RosokSaleList() {
     // Printing refs and state (kept for functionality)
     const [printSaleData, setPrintSaleData] = useState<any>(null)
     const [printReportData, setPrintReportData] = useState<any[]>([])
+    const [printMode, setPrintMode] = useState<'print' | 'pdf' | null>(null)
+    const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
 
     const { data: sales, isLoading, error } = useQuery({
         queryKey: ['rosok-sales'],
@@ -103,6 +105,7 @@ export default function RosokSaleList() {
     const triggerPrintReceipt = (sale: any) => {
         setPrintReportData([])
         setPrintSaleData(sale)
+        setPrintMode('print')
     }
 
     const triggerPrintSelected = () => {
@@ -111,16 +114,43 @@ export default function RosokSaleList() {
 
         setPrintSaleData(null)
         setPrintReportData(selectedData)
+        setPrintMode('print')
+    }
+
+    const triggerDownloadReport = () => {
+        const dataToExport = filteredSales ? [...filteredSales] : []
+        dataToExport.sort((a: any, b: any) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+        
+        setPrintSaleData(null)
+        setPrintReportData(dataToExport)
+        setPrintMode('pdf')
+        setIsDownloadingPdf(true)
     }
 
     React.useEffect(() => {
-        if (printSaleData || (printReportData && printReportData.length > 0)) {
+        if (printMode === 'print' && (printSaleData || (printReportData && printReportData.length > 0))) {
             const timer = setTimeout(() => {
                 window.print()
-            }, 500) // Increased timeout slightly to ensure rendering
+                // Do not clear state here, so the preview stays open after printing
+            }, 500)
+            return () => clearTimeout(timer)
+        } else if (printMode === 'pdf' && printReportData && printReportData.length > 0) {
+            const timer = setTimeout(async () => {
+                try {
+                    const { generatePDF } = await import('@/lib/pdf')
+                    await generatePDF('rosok-report-print', `Laporan_Rosok_${startDate || 'Semua'}_sd_${endDate || 'Semua'}.pdf`, { format: 'a4', orientation: 'l' })
+                    toast.success('PDF berhasil diunduh')
+                } catch (e) {
+                    toast.error('Gagal mengunduh PDF')
+                } finally {
+                    setPrintReportData([])
+                    setPrintMode(null)
+                    setIsDownloadingPdf(false)
+                }
+            }, 800) // Provide enough time to render
             return () => clearTimeout(timer)
         }
-    }, [printSaleData, printReportData])
+    }, [printSaleData, printReportData, printMode, startDate, endDate])
 
     if (isLoading) {
         return (
@@ -143,7 +173,8 @@ export default function RosokSaleList() {
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Print Preview Overlay */}
             {(printSaleData || (printReportData && printReportData.length > 0)) && (
-                <div className="fixed inset-0 z-[50] bg-white flex flex-col items-center overflow-auto p-4 sm:p-8">
+                <div className={`fixed inset-0 z-[50] bg-white flex flex-col items-center overflow-auto p-4 sm:p-8 ${printMode === 'pdf' ? 'opacity-0 pointer-events-none' : ''}`}>
+                    {printMode !== 'pdf' && (
                     <div className="w-full max-w-5xl flex justify-between items-center mb-6 print:hidden">
                         <h2 className="text-xl font-bold text-gray-800">Pratinjau Cetak</h2>
                         <div className="flex gap-3">
@@ -151,12 +182,13 @@ export default function RosokSaleList() {
                                 <Printer className="w-4 h-4 mr-2" />
                                 Cetak
                             </Button>
-                            <Button variant="outline" onClick={() => { setPrintSaleData(null); setPrintReportData([]); }}>
+                            <Button variant="outline" onClick={() => { setPrintSaleData(null); setPrintReportData([]); setPrintMode(null); }}>
                                 <X className="w-4 h-4 mr-2" />
                                 Tutup
                             </Button>
                         </div>
                     </div>
+                    )}
 
                     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 print:shadow-none print:border-none print:p-0 w-full flex justify-center min-h-[500px]">
                         {printSaleData && <RosokReceipt sale={printSaleData} />}
@@ -294,6 +326,16 @@ export default function RosokSaleList() {
                             </button>
                         </div>
 
+                        <Button
+                            variant="outline"
+                            onClick={triggerDownloadReport}
+                            className="flex items-center gap-2 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800"
+                            disabled={isDownloadingPdf || !filteredSales?.length}
+                        >
+                            <Download className="w-4 h-4" /> 
+                            <span className="hidden sm:inline">{isDownloadingPdf ? 'Memproses...' : 'Unduh Laporan PDF'}</span>
+                            <span className="sm:hidden">{isDownloadingPdf ? '...' : 'PDF'}</span>
+                        </Button>
                         {selectedIds.length > 0 && (
                             <Button
                                 variant="outline"

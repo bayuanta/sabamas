@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas'
  * @param elementId - ID of the HTML element to convert to PDF
  * @param filename - Name of the PDF file to download
  */
-export async function generatePDF(elementId: string, filename: string, options: { format?: 'a4' | 'thermal' | 'compact', width?: number } = {}): Promise<void> {
+export async function generatePDF(elementId: string, filename: string, options: { format?: 'a4' | 'thermal' | 'compact', orientation?: 'p' | 'l', width?: number } = {}): Promise<void> {
     const element = document.getElementById(elementId)
 
     if (!element) {
@@ -22,9 +22,6 @@ export async function generatePDF(elementId: string, filename: string, options: 
 
         element.style.display = 'block'
         element.style.visibility = 'visible'
-        // Ensure static position for accurate capture if needed, though fixed works for print. 
-        // For HTML2Canvas, standard positioning is usually safer.
-        // We'll leave position as is since we fixed it for print, but html2canvas might need it visible on screen.
 
         // Wait a bit for rendering
         await new Promise(resolve => setTimeout(resolve, 100))
@@ -48,9 +45,10 @@ export async function generatePDF(elementId: string, filename: string, options: 
         element.style.visibility = originalVisibility
 
         const isThermal = options.format === 'thermal' || filename.toLowerCase().includes('thermal')
+        const orientation = options.orientation || 'p'
 
         let pdfFormat: any = 'a4'
-        let imgWidth = 210 // A4 width in mm
+        let imgWidth = orientation === 'l' ? 297 : 210 // A4 width in mm
 
         if (isThermal) {
             imgWidth = 58 // Thermal width in mm
@@ -59,18 +57,17 @@ export async function generatePDF(elementId: string, filename: string, options: 
             // For thermal, we typically want one long page
             pdfFormat = [imgWidth, imgHeight]
         } else if (options.format === 'compact') {
-            imgWidth = 215.9 // F4 Width? Or based on compact
-            // Compact is 1/3 F4 usually, but let's stick to standard width
-            pdfFormat = 'legal' // or custom
+            imgWidth = 215.9 
+            pdfFormat = 'legal' 
         }
 
-        const pageHeight = isThermal ? 999999 : 297 // Infinite height for calculation logic if thermal
+        const pageHeight = isThermal ? 999999 : (orientation === 'l' ? 210 : 297)
 
         const imgHeight = (canvas.height * imgWidth) / canvas.width
 
         // Create PDF with compression enabled
         const pdf = new jsPDF({
-            orientation: 'p',
+            orientation: orientation,
             unit: 'mm',
             format: isThermal ? [imgWidth, imgHeight] : 'a4', // Use calculated size for thermal
             compress: true
