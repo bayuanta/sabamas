@@ -4,6 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile_admin/services/api_service.dart';
 import 'package:mobile_admin/services/receipt_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:pdf/pdf.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -480,6 +485,87 @@ class _TransactionDetailDialog extends StatelessWidget {
 
   const _TransactionDetailDialog({required this.payment, required this.onCancel});
 
+  void _shareToWhatsApp(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final text = '''
+*BUKTI PEMBAYARAN SABAMAS*
+----------------------------------------
+*No. Transaksi:* #${payment.id.substring(0, 8).toUpperCase()}
+*Pelanggan:* ${payment.customerNama}
+*Tanggal:* ${DateFormat('dd/MM/yyyy HH:mm').format(payment.tanggalBayar)}
+*Bulan:* ${payment.bulanDibayar.join(', ')}
+*Metode:* ${payment.metodeBayar.toUpperCase()}
+*TOTAL BAYAR:* ${fmt.format(payment.jumlahBayar)}
+----------------------------------------
+Terima kasih atas pembayaran Anda! 🙏
+_Sabamas - Sistem Billing Sampah_
+'''.trim();
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Bagikan Bukti Pembayaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(LucideIcons.messageSquare, color: Colors.green),
+              title: const Text('Bagikan Teks ke WhatsApp'),
+              subtitle: const Text('Kirim pesan teks rincian pembayaran'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final urlStr = "https://wa.me/?text=${Uri.encodeComponent(text)}";
+                final uri = Uri.parse(urlStr);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } else {
+                  Share.share(text);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.fileText, color: Colors.blue),
+              title: const Text('Bagikan Struk PDF / File'),
+              subtitle: const Text('Kirim dokumen PDF / file bukti pembayaran'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  final result = PaymentResult(
+                    id: payment.id,
+                    jumlahBayar: payment.jumlahBayar,
+                    tanggalBayar: payment.tanggalBayar,
+                    metodeBayar: payment.metodeBayar,
+                    customerNama: payment.customerNama,
+                    bulanDibayar: payment.bulanDibayar,
+                    isPartial: false, 
+                  );
+                  final pdfBytes = await ReceiptService.generatePdf(
+                    PdfPageFormat.a4,
+                    result,
+                    customerName: payment.customerNama,
+                    customerWilayah: payment.customerWilayah,
+                  );
+                  final tempDir = await getTemporaryDirectory();
+                  final file = await File('${tempDir.path}/Struk-${payment.id.substring(0, 8)}.pdf').create();
+                  await file.writeAsBytes(pdfBytes);
+                  await Share.shareXFiles([XFile(file.path)], text: text);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal berbagi PDF: $e')));
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -511,6 +597,11 @@ class _TransactionDetailDialog extends StatelessWidget {
         ],
       ),
       actions: [
+        TextButton.icon(
+          onPressed: () => _shareToWhatsApp(context),
+          icon: const Icon(LucideIcons.share2, size: 16, color: Colors.green),
+          label: const Text('Bagikan WA', style: TextStyle(color: Colors.green)),
+        ),
         TextButton.icon(
           onPressed: () {
             final result = PaymentResult(

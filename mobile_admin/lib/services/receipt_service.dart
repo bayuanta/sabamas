@@ -234,11 +234,161 @@ class ReceiptService {
                  pw.Center(child: pw.Text('Terima kasih atas partisipasi Anda dalam menjaga kebersihan lingkungan.', style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.grey600))),
                ]
              );
-             // --- A4 END ---
-           }
-        }
-      )
+              // --- A4 END ---
+            }
+         }
+       )
+     );
+     return pdf.save();
+   }
+
+  static Future<void> printBillThermal(
+    Customer customer, {
+    bool isThermalMode = true,
+  }) async {
+    await Printing.layoutPdf(
+      onLayout: (format) => generateBillPdf(
+        format, 
+        customer, 
+        forceThermal: isThermalMode,
+      ),
+      name: 'Tagihan-${customer.nomorPelanggan}',
+      format: isThermalMode ? const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm) : PdfPageFormat.a4,
     );
+  }
+
+  static Future<Uint8List> generateBillPdf(
+    PdfPageFormat format,
+    Customer customer, {
+    bool forceThermal = true,
+  }) async {
+    final pdf = pw.Document();
+    final fontMono = await PdfGoogleFonts.courierPrimeRegular(); 
+    final fontMonoBold = await PdfGoogleFonts.courierPrimeBold();
+
+    final isThermal = forceThermal || format.width < 210 * PdfPageFormat.mm; 
+
+    String monthName(String yyyyMm) {
+      try {
+        final dt = DateTime.parse('$yyyyMm-01');
+        return DateFormat('MMM yyyy', 'id_ID').format(dt);
+      } catch (e) { return yyyyMm; }
+    }
+
+    final arrears = customer.arrearsDetail?.arrearMonths ?? [];
+    final totalArrears = customer.tunggakan;
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: isThermal ? const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm) : format,
+        margin: isThermal ? const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2) : const pw.EdgeInsets.all(20),
+        build: (pw.Context context) {
+          final styleNormal = pw.TextStyle(font: fontMono, fontSize: 9);
+          final styleBold = pw.TextStyle(font: fontMonoBold, fontSize: 9);
+          final styleSmall = pw.TextStyle(font: fontMono, fontSize: 8);
+
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            mainAxisSize: pw.MainAxisSize.min,
+            children: [
+              // HEADER
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Text('SABAMAS', style: pw.TextStyle(font: fontMonoBold, fontSize: 14)),
+                    pw.Text('Sistem Billing Sampah', style: styleSmall),
+                    pw.SizedBox(height: 4),
+                    pw.Container(height: 1, width: double.infinity, color: PdfColors.black),
+                    pw.Container(height: 1, margin: const pw.EdgeInsets.only(top: 1), width: double.infinity, color: PdfColors.black),
+                    pw.SizedBox(height: 4),
+                    pw.Text('TAGIHAN IURAN', style: styleBold),
+                  ]
+                )
+              ),
+              
+              pw.SizedBox(height: 4),
+              pw.Divider(borderStyle: pw.BorderStyle.dashed, height: 1),
+              pw.SizedBox(height: 4),
+
+              // PELANGGAN
+              pw.Row(children: [
+                pw.SizedBox(width: 40, child: pw.Text('No.Pel', style: styleSmall)),
+                pw.Text(': ${customer.nomorPelanggan}', style: styleBold),
+              ]),
+              pw.Row(children: [
+                pw.SizedBox(width: 40, child: pw.Text('Nama', style: styleSmall)),
+                pw.Expanded(child: pw.Text(': ${customer.nama}', style: styleBold)),
+              ]),
+              if (customer.wilayah.isNotEmpty)
+                pw.Row(children: [
+                  pw.SizedBox(width: 40, child: pw.Text('Wilayah', style: styleSmall)),
+                  pw.Text(': ${customer.wilayah}', style: styleSmall),
+                ]),
+              if (customer.tarif != null)
+                pw.Row(children: [
+                  pw.SizedBox(width: 40, child: pw.Text('Tarif', style: styleSmall)),
+                  pw.Text(': ${customer.tarif!.namaKategori} (${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(customer.tarif!.hargaPerBulan)}/bln)', style: styleSmall),
+                ]),
+
+              pw.SizedBox(height: 4),
+              pw.Divider(borderStyle: pw.BorderStyle.dashed, height: 1),
+              pw.SizedBox(height: 4),
+
+              // RINCIAN TAGIHAN / TUNGGAKAN
+              pw.Text('RINCIAN TAGIHAN:', style: styleSmall),
+              if (arrears.isEmpty)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(top: 2),
+                  child: pw.Text('Tidak ada tunggakan tagihan.', style: styleNormal),
+                )
+              else
+                ...arrears.asMap().entries.map((entry) {
+                  final m = entry.value;
+                  return pw.Padding(
+                    padding: const pw.EdgeInsets.only(top: 2),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Expanded(child: pw.Text('${entry.key + 1}. ${monthName(m.month)}', style: styleNormal)),
+                        pw.Text(
+                          NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(m.amount),
+                          style: styleBold,
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+
+              pw.SizedBox(height: 4),
+              pw.Divider(borderStyle: pw.BorderStyle.solid, height: 1),
+              pw.SizedBox(height: 4),
+
+              // TOTAL
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('TOTAL TAGIHAN', style: styleBold),
+                  pw.Text(
+                    NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(totalArrears),
+                    style: styleBold.copyWith(fontSize: 11),
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 8),
+              pw.Container(height: 1, width: double.infinity, color: PdfColors.black),
+              pw.Container(height: 1, margin: const pw.EdgeInsets.only(top: 1), width: double.infinity, color: PdfColors.black),
+              pw.SizedBox(height: 6),
+
+              // FOOTER
+              pw.Center(child: pw.Text('Mohon segera lakukan pembayaran', style: styleSmall.copyWith(fontSize: 7))),
+              pw.Center(child: pw.Text('Dicetak: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}', style: styleSmall.copyWith(fontSize: 7))),
+            ],
+          );
+        },
+      ),
+    );
+
     return pdf.save();
   }
 }

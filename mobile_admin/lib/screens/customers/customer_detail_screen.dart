@@ -206,6 +206,11 @@ _SABAMAS - Sistem Billing Sampah_
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            onPressed: () => ReceiptService.printBillThermal(c),
+            icon: Icon(LucideIcons.printer, color: theme.iconTheme.color),
+            tooltip: 'Cetak Tagihan Thermal',
+          ),
           if (hasArrears)
             IconButton(
               onPressed: _shareWa, 
@@ -328,10 +333,27 @@ _SABAMAS - Sistem Billing Sampah_
     final theme = Theme.of(context);
     final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: c.arrearsDetail!.arrearMonths.length,
-      itemBuilder: (context, index) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 4),
+          child: ElevatedButton.icon(
+            onPressed: () => ReceiptService.printBillThermal(c),
+            icon: const Icon(LucideIcons.printer, size: 18),
+            label: const Text('Cetak Tagihan Thermal (58mm)', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(44),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: c.arrearsDetail!.arrearMonths.length,
+            itemBuilder: (context, index) {
         final item = c.arrearsDetail!.arrearMonths[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -360,7 +382,10 @@ _SABAMAS - Sistem Billing Sampah_
           ),
         );
       },
-    );
+    ),
+  ),
+],
+);
   }
 
   Widget _buildPartialPaymentsTab(Customer c) {
