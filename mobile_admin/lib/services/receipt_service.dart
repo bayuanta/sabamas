@@ -53,7 +53,6 @@ class ReceiptService {
 
     pdf.addPage(
       pw.Page(
-        pageColor: PdfColors.white,
         pageFormat: isThermal ? const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm) : format,
         margin: isThermal ? const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2) : const pw.EdgeInsets.all(20),
         build: (pw.Context context) {
@@ -302,7 +301,6 @@ class ReceiptService {
 
     pdf.addPage(
       pw.Page(
-        pageColor: PdfColors.white,
         pageFormat: isThermal ? const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm) : format,
         margin: isThermal ? const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2) : const pw.EdgeInsets.all(20),
         build: (pw.Context context) {
