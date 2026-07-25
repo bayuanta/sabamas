@@ -8,8 +8,7 @@ class ApiService {
   static String? _cachedBaseUrl;
 
   static String get defaultBaseUrl {
-    if (kIsWeb) return 'http://localhost:3001/api';
-    return 'https://sabamas.web.id/api'; 
+    return 'https://sabamas-api.vercel.app/api'; 
   }
 
   static String get baseUrl => _cachedBaseUrl ?? defaultBaseUrl;

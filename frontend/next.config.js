@@ -5,7 +5,7 @@ const nextConfig = {
   output: isAndroidBuild ? 'export' : undefined, // Only use export for Android builds
   reactStrictMode: false,
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://sabamas-api.vercel.app/api',
   },
   optimizeFonts: false, // Fix build timeout on VPS
   images: {
