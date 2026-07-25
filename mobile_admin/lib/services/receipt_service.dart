@@ -303,7 +303,7 @@ class ReceiptService {
           final styleSmall = pw.TextStyle(font: fontMono, fontSize: 8);
 
           return pw.Column(
-            cross: pw.CrossAxisAlignment.start,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             mainAxisSize: pw.MainAxisSize.min,
             children: [
               // HEADER
