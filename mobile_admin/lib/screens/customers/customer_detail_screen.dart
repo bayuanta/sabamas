@@ -6,6 +6,8 @@ import 'package:mobile_admin/services/receipt_service.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_admin/screens/customers/customer_form_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mobile_admin/services/bluetooth_print_service.dart';
+import 'package:mobile_admin/widgets/bluetooth_printer_modal.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final String customerId;
@@ -97,6 +99,27 @@ Mohon segera lakukan pembayaran. 🙏
 
 _SABAMAS - Sistem Billing Sampah_
     '''.trim();
+  }
+
+  Future<void> _printBillDirectOrModal(Customer c) async {
+    final savedMac = await BluetoothPrintService.getSavedMacAddress();
+    if (savedMac != null && savedMac.isNotEmpty) {
+      final ok = await BluetoothPrintService.printBillDirect(c);
+      if (ok) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tagihan dicetak ke Printer Bluetooth!'), backgroundColor: Colors.green),
+          );
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      showBluetoothPrinterModal(context, onSelected: () async {
+        await BluetoothPrintService.printBillDirect(c);
+      });
+    }
   }
 
   Future<void> _shareWa() async {
@@ -207,7 +230,7 @@ _SABAMAS - Sistem Billing Sampah_
         ),
         actions: [
           IconButton(
-            onPressed: () => ReceiptService.printBillThermal(c),
+            onPressed: () => _printBillDirectOrModal(c),
             icon: Icon(LucideIcons.printer, color: theme.iconTheme.color),
             tooltip: 'Cetak Tagihan Thermal',
           ),
@@ -338,7 +361,7 @@ _SABAMAS - Sistem Billing Sampah_
         Padding(
           padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 4),
           child: ElevatedButton.icon(
-            onPressed: () => ReceiptService.printBillThermal(c),
+            onPressed: () => _printBillDirectOrModal(c),
             icon: const Icon(LucideIcons.printer, size: 18),
             label: const Text('Cetak Tagihan Thermal (58mm)', style: TextStyle(fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile_admin/providers/auth_provider.dart';
 import 'package:mobile_admin/providers/theme_provider.dart';
 import 'package:mobile_admin/screens/login_screen.dart';
+import 'package:mobile_admin/widgets/bluetooth_printer_modal.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -166,6 +167,16 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, 'Peralatan & Cetak'),
+          _buildListTile(
+            context,
+            icon: LucideIcons.printer,
+            title: 'Printer Bluetooth Thermal',
+            subtitle: 'Hubungkan & tes cetak printer 58mm',
+            onTap: () => showBluetoothPrinterModal(context),
+          ),
+
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Aplikasi'),
           _buildListTile(

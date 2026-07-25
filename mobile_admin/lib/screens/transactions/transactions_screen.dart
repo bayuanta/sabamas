@@ -10,6 +10,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'dart:io';
+import 'package:mobile_admin/services/bluetooth_print_service.dart';
+import 'package:mobile_admin/widgets/bluetooth_printer_modal.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -635,6 +637,51 @@ _SABAMAS - Sistem Billing Sampah_
           label: const Text('Bagikan WA', style: TextStyle(color: Colors.green)),
         ),
         TextButton.icon(
+          onPressed: () async {
+            final result = PaymentResult(
+              id: payment.id,
+              jumlahBayar: payment.jumlahBayar,
+              tanggalBayar: payment.tanggalBayar,
+              metodeBayar: payment.metodeBayar,
+              customerNama: payment.customerNama,
+              bulanDibayar: payment.bulanDibayar,
+              isPartial: false, 
+            );
+            
+            final savedMac = await BluetoothPrintService.getSavedMacAddress();
+            if (savedMac != null && savedMac.isNotEmpty) {
+              final ok = await BluetoothPrintService.printReceiptDirect(
+                result, 
+                customerName: payment.customerNama, 
+                customerWilayah: payment.customerWilayah,
+              );
+              if (ok) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Struk berhasil dicetak ke Printer Bluetooth!'), backgroundColor: Colors.green),
+                  );
+                }
+                return;
+              }
+            }
+
+            if (context.mounted) {
+              showBluetoothPrinterModal(context, onSelected: () async {
+                await BluetoothPrintService.printReceiptDirect(
+                  result, 
+                  customerName: payment.customerNama, 
+                  customerWilayah: payment.customerWilayah,
+                );
+              });
+            }
+          },
+          icon: const Icon(LucideIcons.printer, size: 16),
+          label: const Text('Cetak Thermal BT'),
+        ),
+        IconButton(
+          tooltip: 'Pratinjau / Cetak System PDF',
+          icon: const Icon(LucideIcons.fileText, size: 16),
           onPressed: () {
             final result = PaymentResult(
               id: payment.id,
@@ -646,7 +693,7 @@ _SABAMAS - Sistem Billing Sampah_
               isPartial: false, 
             );
             
-            Navigator.pop(context); // Close dialog first to allow printing UI
+            Navigator.pop(context);
             ReceiptService.printReceipt(
               result, 
               customerName: payment.customerNama, 
@@ -654,8 +701,6 @@ _SABAMAS - Sistem Billing Sampah_
               isThermalMode: true,
             );
           },
-          icon: const Icon(LucideIcons.printer, size: 16),
-          label: const Text('Cetak Struk'),
         ),
         if (!payment.isDeposited)
           TextButton(
