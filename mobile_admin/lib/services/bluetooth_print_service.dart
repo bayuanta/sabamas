@@ -4,9 +4,23 @@ import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_admin/services/api_service.dart';
 
+import 'package:permission_handler/permission_handler.dart';
+
 class BluetoothPrintService {
   static const String _prefMacKey = 'selected_bluetooth_mac';
   static const String _prefNameKey = 'selected_bluetooth_name';
+
+  static Future<void> requestPermissions() async {
+    try {
+      await [
+        Permission.bluetoothConnect,
+        Permission.bluetoothScan,
+        Permission.location,
+      ].request();
+    } catch (e) {
+      // Fallback
+    }
+  }
 
   static Future<String?> getSavedMacAddress() async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,6 +40,7 @@ class BluetoothPrintService {
 
   static Future<List<BluetoothInfo>> getPairedDevices() async {
     try {
+      await requestPermissions();
       final List<BluetoothInfo> list = await PrintBluetoothThermal.pairedBluetooths;
       return list;
     } catch (e) {
