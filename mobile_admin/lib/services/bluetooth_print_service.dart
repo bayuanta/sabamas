@@ -99,10 +99,10 @@ class BluetoothPrintService {
     bytes.addAll(latin1.encode('Printer RP330N Terhubung OK!\n'));
     bytes.addAll(latin1.encode('STATUS: SIAP CETAK STRUK\n'));
     bytes.addAll(latin1.encode('--------------------------------\n'));
-    bytes.addAll(latin1.encode('Sistem Billing Sampah Desa\n\n\n\n'));
+    bytes.addAll(latin1.encode('Sistem Billing Sampah Desa\n\n'));
     
-    // MANDATORY PAPER FEED & CUT FOR RP330N / THERMAL MOTOR
-    bytes.addAll([0x1B, 0x64, 0x06]); // ESC d 6 (Feed 6 lines)
+    // PAPER SAVING FEED (Just enough for tear bar)
+    bytes.addAll([0x1B, 0x64, 0x02]); // ESC d 2 (Feed only 2 lines)
     bytes.addAll([0x1D, 0x56, 0x41, 0x00]); // GS V 65 0 (Paper cut)
 
     return await PrintBluetoothThermal.writeBytes(bytes);
@@ -200,9 +200,9 @@ class BluetoothPrintService {
     bytes.addAll(latin1.encode('Terima Kasih\n'));
     bytes.addAll(latin1.encode('Simpan struk ini sebagai bukti\n'));
     
-    // MANDATORY PAPER FEED & CUT FOR RP330N / THERMAL MOTOR
-    bytes.addAll(latin1.encode('\n\n\n\n'));
-    bytes.addAll([0x1B, 0x64, 0x06]); // ESC d 6 (Feed 6 lines)
+    // PAPER SAVING FEED (Just enough for tear bar)
+    bytes.addAll(latin1.encode('\n\n'));
+    bytes.addAll([0x1B, 0x64, 0x02]); // ESC d 2 (Feed only 2 lines)
     bytes.addAll([0x1D, 0x56, 0x41, 0x00]); // GS V 65 0 (Cut paper)
 
     return await PrintBluetoothThermal.writeBytes(bytes);
@@ -288,9 +288,9 @@ class BluetoothPrintService {
     bytes.addAll(latin1.encode('Mohon segera lakukan pembayaran\n'));
     bytes.addAll(latin1.encode('Dicetak: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}\n'));
     
-    // MANDATORY PAPER FEED & CUT FOR RP330N / THERMAL MOTOR
-    bytes.addAll(latin1.encode('\n\n\n\n'));
-    bytes.addAll([0x1B, 0x64, 0x06]); // ESC d 6 (Feed 6 lines)
+    // PAPER SAVING FEED (Just enough for tear bar)
+    bytes.addAll(latin1.encode('\n\n'));
+    bytes.addAll([0x1B, 0x64, 0x02]); // ESC d 2 (Feed only 2 lines)
     bytes.addAll([0x1D, 0x56, 0x41, 0x00]); // GS V 65 0 (Cut paper)
 
     return await PrintBluetoothThermal.writeBytes(bytes);
