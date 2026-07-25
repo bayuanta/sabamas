@@ -199,22 +199,14 @@ class _BluetoothPrinterModalState extends State<BluetoothPrinterModal> {
                 icon: const Icon(LucideIcons.printer, size: 16),
                 label: Text('Tes Cetak (${_selectedName ?? "Printer"})'),
                 onPressed: () async {
-                  bool ok = await BluetoothPrintService.connect(_selectedMac!);
-                  if (ok) {
-                    StringBuffer sb = StringBuffer();
-                    sb.write('\x1B\x40\x1B\x61\x01\x1B\x45\x01SABAMAS TEST\n\x1B\x45\x00Printer Terhubung OK!\n\n\n');
-                    await PrintBluetoothThermal.writeBytes(Uint8List.fromList(sb.toString().codeUnits));
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tes cetak terkirim!'), backgroundColor: Colors.green),
-                      );
-                    }
-                  } else {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Gagal menghubungkan printer!'), backgroundColor: Colors.red),
-                      );
-                    }
+                  bool ok = await BluetoothPrintService.printTestReceipt(_selectedMac!);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok ? 'Tes cetak terkirim! Kertas harus keluar.' : 'Gagal mengirim ke printer!'),
+                        backgroundColor: ok ? Colors.green : Colors.red,
+                      ),
+                    );
                   }
                 },
               ),

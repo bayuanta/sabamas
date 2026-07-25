@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        primaryColor.withOpacity(isDark ? 0.25 : 0.15),
+                        primaryColor.withOpacity(isDark ? 0.3 : 0.15),
                         primaryColor.withOpacity(0.0),
                       ],
                     ),
@@ -91,9 +91,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E293B) : Colors.white,
                         shape: BoxShape.circle,
+                        border: isDark ? Border.all(color: primaryColor.withOpacity(0.5), width: 2) : null,
                         boxShadow: [
                           BoxShadow(
-                            color: primaryColor.withOpacity(0.2),
+                            color: primaryColor.withOpacity(isDark ? 0.35 : 0.2),
                             blurRadius: 30,
                             spreadRadius: 5,
                             offset: const Offset(0, 10),
@@ -136,26 +137,35 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         Text(
                           'SABAMAS',
                           style: GoogleFonts.outfit(
-                            fontSize: 32,
+                            fontSize: 34,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 2.0,
+                            letterSpacing: 2.5,
                             color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            shadows: isDark
+                                ? [
+                                    Shadow(
+                                      color: primaryColor.withOpacity(0.6),
+                                      blurRadius: 10,
+                                    ),
+                                  ]
+                                : null,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.1),
+                            color: isDark ? primaryColor.withOpacity(0.2) : primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
+                            border: isDark ? Border.all(color: primaryColor.withOpacity(0.6)) : null,
                           ),
                           child: Text(
                             'SISTEM BILLING SAMPAH DESA',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               letterSpacing: 1.2,
-                              color: primaryColor,
+                              color: isDark ? Colors.white : primaryColor,
                             ),
                           ),
                         ),
@@ -175,7 +185,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
                         minHeight: 4,
-                        backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                        backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                       ),
                     ),
@@ -198,16 +208,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     'Solusi Kebersihan Lingkungan Desa',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'v1.0.0',
                     style: GoogleFonts.inter(
-                      fontSize: 10,
-                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                      fontSize: 11,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                   ),
                 ],

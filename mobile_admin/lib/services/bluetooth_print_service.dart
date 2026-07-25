@@ -1,9 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_admin/services/api_service.dart';
-
 import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothPrintService {
@@ -58,15 +58,12 @@ class BluetoothPrintService {
 
   static Future<bool> connect(String macAddress) async {
     try {
-      // Disconnect stale socket first
       await PrintBluetoothThermal.disconnect;
       await Future.delayed(const Duration(milliseconds: 250));
 
-      // Attempt 1
       bool result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
       if (result) return true;
 
-      // Attempt 2 (Retry for RP330N / ESC-POS printers)
       await Future.delayed(const Duration(milliseconds: 500));
       result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
       return result;
@@ -81,6 +78,34 @@ class BluetoothPrintService {
     } catch (e) {
       return false;
     }
+  }
+
+  static Future<bool> printTestReceipt(String macAddress) async {
+    bool ok = await isConnected();
+    if (!ok) {
+      ok = await connect(macAddress);
+      if (!ok) return false;
+    }
+
+    List<int> bytes = [];
+    // ESC/POS Commands
+    bytes.addAll([0x1B, 0x40]); // Initialize ESC @
+    bytes.addAll([0x1B, 0x74, 0x00]); // Select PC437 code table
+    bytes.addAll([0x1B, 0x61, 0x01]); // Center align
+    bytes.addAll([0x1B, 0x45, 0x01]); // Bold ON
+    bytes.addAll(latin1.encode('SABAMAS PRINTER TEST\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]); // Bold OFF
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll(latin1.encode('Printer RP330N Terhubung OK!\n'));
+    bytes.addAll(latin1.encode('STATUS: SIAP CETAK STRUK\n'));
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll(latin1.encode('Sistem Billing Sampah Desa\n\n\n\n'));
+    
+    // MANDATORY PAPER FEED & CUT FOR RP330N / THERMAL MOTOR
+    bytes.addAll([0x1B, 0x64, 0x06]); // ESC d 6 (Feed 6 lines)
+    bytes.addAll([0x1D, 0x56, 0x41, 0x00]); // GS V 65 0 (Paper cut)
+
+    return await PrintBluetoothThermal.writeBytes(bytes);
   }
 
   static Future<bool> printReceiptDirect(
@@ -114,36 +139,37 @@ class BluetoothPrintService {
 
     final currencyFmt = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
 
-    StringBuffer sb = StringBuffer();
+    List<int> bytes = [];
     // ESC/POS Commands
-    sb.write('\x1B\x40'); // Initialize printer
+    bytes.addAll([0x1B, 0x40]); // Initialize
+    bytes.addAll([0x1B, 0x74, 0x00]); // Select PC437
     
     // Header - Center
-    sb.write('\x1B\x61\x01'); 
-    sb.write('\x1B\x45\x01'); // Bold on
-    sb.write('SABAMAS\n');
-    sb.write('\x1B\x45\x00'); // Bold off
-    sb.write('Billing Sampah Desa\n');
-    sb.write('--------------------------------\n');
-    sb.write('\x1B\x45\x01');
-    sb.write('NOTA PEMBAYARAN\n');
-    sb.write('\x1B\x45\x00');
-    sb.write('--------------------------------\n');
+    bytes.addAll([0x1B, 0x61, 0x01]); 
+    bytes.addAll([0x1B, 0x45, 0x01]); // Bold on
+    bytes.addAll(latin1.encode('SABAMAS\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]); // Bold off
+    bytes.addAll(latin1.encode('Billing Sampah Desa\n'));
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll([0x1B, 0x45, 0x01]);
+    bytes.addAll(latin1.encode('NOTA PEMBAYARAN\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]);
+    bytes.addAll(latin1.encode('--------------------------------\n'));
 
     // Align Left
-    sb.write('\x1B\x61\x00');
-    sb.write('No.     : ${result.id.substring(0, 8).toUpperCase()}\n');
-    sb.write('Tgl     : ${DateFormat('dd/MM/yy HH:mm').format(result.tanggalBayar)}\n');
-    sb.write('--------------------------------\n');
-    sb.write('PELANGGAN:\n');
-    sb.write('\x1B\x45\x01');
-    sb.write('$cName\n');
-    sb.write('\x1B\x45\x00');
+    bytes.addAll([0x1B, 0x61, 0x00]);
+    bytes.addAll(latin1.encode('No.     : ${result.id.substring(0, 8).toUpperCase()}\n'));
+    bytes.addAll(latin1.encode('Tgl     : ${DateFormat('dd/MM/yy HH:mm').format(result.tanggalBayar)}\n'));
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll(latin1.encode('PELANGGAN:\n'));
+    bytes.addAll([0x1B, 0x45, 0x01]);
+    bytes.addAll(latin1.encode('$cName\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]);
     if (cWilayah.isNotEmpty) {
-      sb.write('$cWilayah\n');
+      bytes.addAll(latin1.encode('$cWilayah\n'));
     }
-    sb.write('--------------------------------\n');
-    sb.write('RINCIAN:\n');
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll(latin1.encode('RINCIAN:\n'));
 
     final itemPrice = result.jumlahBayar / (result.bulanDibayar.isEmpty ? 1 : result.bulanDibayar.length);
     for (int i = 0; i < result.bulanDibayar.length; i++) {
@@ -151,32 +177,35 @@ class BluetoothPrintService {
       String priceStr = currencyFmt.format(itemPrice);
       int spaceCount = 32 - (name.length + priceStr.length);
       if (spaceCount < 1) spaceCount = 1;
-      sb.write(name + (' ' * spaceCount) + priceStr + '\n');
+      bytes.addAll(latin1.encode(name + (' ' * spaceCount) + priceStr + '\n'));
     }
 
-    sb.write('--------------------------------\n');
-    sb.write('\x1B\x45\x01');
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll([0x1B, 0x45, 0x01]);
     String totalTitle = 'TOTAL';
     String totalVal = 'Rp ${currencyFmt.format(result.jumlahBayar)}';
     int totalSpace = 32 - (totalTitle.length + totalVal.length);
     if (totalSpace < 1) totalSpace = 1;
-    sb.write(totalTitle + (' ' * totalSpace) + totalVal + '\n');
-    sb.write('\x1B\x45\x00');
+    bytes.addAll(latin1.encode(totalTitle + (' ' * totalSpace) + totalVal + '\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]);
 
     String mTitle = 'METODE';
     String mVal = result.metodeBayar.toUpperCase();
     int mSpace = 32 - (mTitle.length + mVal.length);
     if (mSpace < 1) mSpace = 1;
-    sb.write(mTitle + (' ' * mSpace) + mVal + '\n');
+    bytes.addAll(latin1.encode(mTitle + (' ' * mSpace) + mVal + '\n'));
 
-    sb.write('================================\n');
-    sb.write('\x1B\x61\x01'); // Center
-    sb.write('Terima Kasih\n');
-    sb.write('Simpan struk ini sebagai bukti\n');
-    sb.write('\n\n\n'); // Line feeds
+    bytes.addAll(latin1.encode('================================\n'));
+    bytes.addAll([0x1B, 0x61, 0x01]); // Center
+    bytes.addAll(latin1.encode('Terima Kasih\n'));
+    bytes.addAll(latin1.encode('Simpan struk ini sebagai bukti\n'));
+    
+    // MANDATORY PAPER FEED & CUT FOR RP330N / THERMAL MOTOR
+    bytes.addAll(latin1.encode('\n\n\n\n'));
+    bytes.addAll([0x1B, 0x64, 0x06]); // ESC d 6 (Feed 6 lines)
+    bytes.addAll([0x1D, 0x56, 0x41, 0x00]); // GS V 65 0 (Cut paper)
 
-    final bool sent = await PrintBluetoothThermal.writeBytes(Uint8List.fromList(sb.toString().codeUnits));
-    return sent;
+    return await PrintBluetoothThermal.writeBytes(bytes);
   }
 
   static Future<bool> printBillDirect(
@@ -207,59 +236,63 @@ class BluetoothPrintService {
     final arrears = customer.arrearsDetail?.arrearMonths ?? [];
     final totalArrears = customer.tunggakan;
 
-    StringBuffer sb = StringBuffer();
-    sb.write('\x1B\x40'); // Reset
-    sb.write('\x1B\x61\x01'); // Center
-    sb.write('\x1B\x45\x01'); // Bold
-    sb.write('SABAMAS\n');
-    sb.write('\x1B\x45\x00');
-    sb.write('Sistem Billing Sampah\n');
-    sb.write('--------------------------------\n');
-    sb.write('\x1B\x45\x01');
-    sb.write('TAGIHAN IURAN\n');
-    sb.write('\x1B\x45\x00');
-    sb.write('--------------------------------\n');
+    List<int> bytes = [];
+    bytes.addAll([0x1B, 0x40]); // Reset
+    bytes.addAll([0x1B, 0x74, 0x00]); // Code page PC437
+    bytes.addAll([0x1B, 0x61, 0x01]); // Center
+    bytes.addAll([0x1B, 0x45, 0x01]); // Bold
+    bytes.addAll(latin1.encode('SABAMAS\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]);
+    bytes.addAll(latin1.encode('Sistem Billing Sampah\n'));
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll([0x1B, 0x45, 0x01]);
+    bytes.addAll(latin1.encode('TAGIHAN IURAN\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]);
+    bytes.addAll(latin1.encode('--------------------------------\n'));
 
-    sb.write('\x1B\x61\x00'); // Left
-    sb.write('No.Pel  : ${customer.nomorPelanggan}\n');
-    sb.write('Nama    : ${customer.nama}\n');
+    bytes.addAll([0x1B, 0x61, 0x00]); // Left
+    bytes.addAll(latin1.encode('No.Pel  : ${customer.nomorPelanggan}\n'));
+    bytes.addAll(latin1.encode('Nama    : ${customer.nama}\n'));
     if (customer.wilayah.isNotEmpty) {
-      sb.write('Wilayah : ${customer.wilayah}\n');
+      bytes.addAll(latin1.encode('Wilayah : ${customer.wilayah}\n'));
     }
     if (customer.tarif != null) {
-      sb.write('Tarif   : ${customer.tarif!.namaKategori}\n');
+      bytes.addAll(latin1.encode('Tarif   : ${customer.tarif!.namaKategori}\n'));
     }
-    sb.write('--------------------------------\n');
-    sb.write('RINCIAN TAGIHAN:\n');
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll(latin1.encode('RINCIAN TAGIHAN:\n'));
 
     if (arrears.isEmpty) {
-      sb.write('Tidak ada tunggakan tagihan.\n');
+      bytes.addAll(latin1.encode('Tidak ada tunggakan tagihan.\n'));
     } else {
       for (int i = 0; i < arrears.length; i++) {
         String name = '${i + 1}. ${monthName(arrears[i].month)}';
         String priceStr = currencyFmt.format(arrears[i].amount);
         int spaceCount = 32 - (name.length + priceStr.length);
         if (spaceCount < 1) spaceCount = 1;
-        sb.write(name + (' ' * spaceCount) + priceStr + '\n');
+        bytes.addAll(latin1.encode(name + (' ' * spaceCount) + priceStr + '\n'));
       }
     }
 
-    sb.write('--------------------------------\n');
-    sb.write('\x1B\x45\x01');
+    bytes.addAll(latin1.encode('--------------------------------\n'));
+    bytes.addAll([0x1B, 0x45, 0x01]);
     String totalTitle = 'TOTAL TAGIHAN';
     String totalVal = 'Rp ${currencyFmt.format(totalArrears)}';
     int totalSpace = 32 - (totalTitle.length + totalVal.length);
     if (totalSpace < 1) totalSpace = 1;
-    sb.write(totalTitle + (' ' * totalSpace) + totalVal + '\n');
-    sb.write('\x1B\x45\x00');
+    bytes.addAll(latin1.encode(totalTitle + (' ' * totalSpace) + totalVal + '\n'));
+    bytes.addAll([0x1B, 0x45, 0x00]);
 
-    sb.write('================================\n');
-    sb.write('\x1B\x61\x01'); // Center
-    sb.write('Mohon segera lakukan pembayaran\n');
-    sb.write('Dicetak: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}\n');
-    sb.write('\n\n\n');
+    bytes.addAll(latin1.encode('================================\n'));
+    bytes.addAll([0x1B, 0x61, 0x01]); // Center
+    bytes.addAll(latin1.encode('Mohon segera lakukan pembayaran\n'));
+    bytes.addAll(latin1.encode('Dicetak: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}\n'));
+    
+    // MANDATORY PAPER FEED & CUT FOR RP330N / THERMAL MOTOR
+    bytes.addAll(latin1.encode('\n\n\n\n'));
+    bytes.addAll([0x1B, 0x64, 0x06]); // ESC d 6 (Feed 6 lines)
+    bytes.addAll([0x1D, 0x56, 0x41, 0x00]); // GS V 65 0 (Cut paper)
 
-    final bool sent = await PrintBluetoothThermal.writeBytes(Uint8List.fromList(sb.toString().codeUnits));
-    return sent;
+    return await PrintBluetoothThermal.writeBytes(bytes);
   }
 }
