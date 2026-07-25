@@ -23,13 +23,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadToken() async {
+    final startTime = DateTime.now();
     try {
       _token = await _storage.read(key: 'jwt_token');
-      // Verify token validity here if needed, or rely on API 401 later
     } catch (e) {
-      // Handle storage read error
       _token = null;
     } finally {
+      final elapsed = DateTime.now().difference(startTime);
+      const minDuration = Duration(milliseconds: 2500);
+      if (elapsed < minDuration) {
+        await Future.delayed(minDuration - elapsed);
+      }
       _isInitialized = true;
       notifyListeners();
     }
