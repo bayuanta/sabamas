@@ -6,6 +6,8 @@ import 'package:mobile_admin/providers/auth_provider.dart';
 import 'package:mobile_admin/screens/dashboard_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'package:mobile_admin/services/api_service.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,6 +22,63 @@ class _LoginScreenState extends State<LoginScreen> {
   
   bool _obscurePassword = true;
   bool _rememberMe = true;
+
+  void _showServerUrlDialog() async {
+    final currentUrl = await ApiService.getApiUrl();
+    final urlController = TextEditingController(text: currentUrl);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pengaturan URL Server API'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Masukkan URL Server API (contoh: https://sabamas.web.id/api atau https://your-app.vercel.app/api):',
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(
+                labelText: 'URL Server API',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(LucideIcons.globe),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newUrl = urlController.text.trim();
+              if (newUrl.isNotEmpty) {
+                await ApiService.setApiUrl(newUrl);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('URL Server berhasil disimpan!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
@@ -54,11 +113,22 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Form(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(LucideIcons.settings),
+                tooltip: 'Pengaturan Server API',
+                onPressed: _showServerUrlDialog,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -207,9 +277,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ).animate().fadeIn(delay: 600.ms).scale(),
                   ],
                 ),
-              ),
             ),
-          ),
+          ],
         ),
       ),
     );

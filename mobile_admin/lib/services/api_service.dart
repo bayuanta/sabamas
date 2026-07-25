@@ -4,24 +4,50 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  // Ganti URL ini sesuai kebutuhan:
-  static String get baseUrl {
+  static const _storage = FlutterSecureStorage();
+  static String? _cachedBaseUrl;
+
+  static String get defaultBaseUrl {
     if (kIsWeb) return 'http://localhost:3001/api';
-    // Use production domain for release build
     return 'https://sabamas.web.id/api'; 
   }
 
+  static String get baseUrl => _cachedBaseUrl ?? defaultBaseUrl;
+
+  static Future<String> getApiUrl() async {
+    if (_cachedBaseUrl != null) return _cachedBaseUrl!;
+    final customUrl = await _storage.read(key: 'custom_api_url');
+    if (customUrl != null && customUrl.isNotEmpty) {
+      _cachedBaseUrl = customUrl;
+      return customUrl;
+    }
+    return defaultBaseUrl;
+  }
+
+  static Future<void> setApiUrl(String newUrl) async {
+    String formattedUrl = newUrl.trim();
+    if (formattedUrl.endsWith('/')) {
+      formattedUrl = formattedUrl.substring(0, formattedUrl.length - 1);
+    }
+    if (!formattedUrl.endsWith('/api') && !formattedUrl.contains('/api/')) {
+      formattedUrl = '$formattedUrl/api';
+    }
+    _cachedBaseUrl = formattedUrl;
+    await _storage.write(key: 'custom_api_url', value: formattedUrl);
+  }
+
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
+    baseUrl: defaultBaseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
   ));
 
-  final _storage = const FlutterSecureStorage();
-
   ApiService() {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
+        final currentUrl = await getApiUrl();
+        options.baseUrl = currentUrl;
+
         final token = await _storage.read(key: 'jwt_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';

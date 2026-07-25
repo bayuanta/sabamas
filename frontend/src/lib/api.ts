@@ -1,6 +1,12 @@
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const getBaseApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL
+  if (typeof window !== 'undefined') return `${window.location.origin}/api`
+  return 'http://localhost:3001/api'
+}
+
+const API_URL = getBaseApiUrl()
 
 export const api = axios.create({
   baseURL: API_URL,
