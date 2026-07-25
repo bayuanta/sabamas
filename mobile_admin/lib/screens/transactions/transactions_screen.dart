@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -7,6 +8,7 @@ import 'package:mobile_admin/services/receipt_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 import 'dart:io';
 import 'package:pdf/pdf.dart';
 
@@ -486,19 +488,44 @@ class _TransactionDetailDialog extends StatelessWidget {
   const _TransactionDetailDialog({required this.payment, required this.onCancel});
 
   void _shareToWhatsApp(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    String formatMonth(String yyyyMm) {
+      try {
+        final dt = DateTime.parse('$yyyyMm-01');
+        return DateFormat('MMMM yyyy', 'id_ID').format(dt);
+      } catch (e) {
+        return yyyyMm;
+      }
+    }
+
+    final bulanList = payment.bulanDibayar.asMap().entries.map((e) {
+      return '${e.key + 1}. ${formatMonth(e.value)}';
+    }).join('\n');
+
     final text = '''
 *BUKTI PEMBAYARAN SABAMAS*
-----------------------------------------
-*No. Transaksi:* #${payment.id.substring(0, 8).toUpperCase()}
+━━━━━━━━━━━━━━━━━━━
+
 *Pelanggan:* ${payment.customerNama}
-*Tanggal:* ${DateFormat('dd/MM/yyyy HH:mm').format(payment.tanggalBayar)}
-*Bulan:* ${payment.bulanDibayar.join(', ')}
+*Tanggal:* ${DateFormat('dd MMMM yyyy HH:mm', 'id_ID').format(payment.tanggalBayar)}
+*No. Transaksi:* ${payment.id.substring(0, 8).toUpperCase()}
+
+━━━━━━━━━━━━━━━━━━━
+*RINCIAN PEMBAYARAN*
+
+$bulanList
+
+━━━━━━━━━━━━━━━━━━━
+*Total Bulan:* ${payment.bulanDibayar.length}
 *Metode:* ${payment.metodeBayar.toUpperCase()}
-*TOTAL BAYAR:* ${fmt.format(payment.jumlahBayar)}
-----------------------------------------
+*TOTAL BAYAR:* ${formatCurrency.format(payment.jumlahBayar)}
+
+━━━━━━━━━━━━━━━━━━━
+
 Terima kasih atas pembayaran Anda! 🙏
-_Sabamas - Sistem Billing Sampah_
+
+_SABAMAS - Sistem Billing Sampah_
 '''.trim();
 
     showModalBottomSheet(
@@ -528,9 +555,9 @@ _Sabamas - Sistem Billing Sampah_
               },
             ),
             ListTile(
-              leading: const Icon(LucideIcons.fileText, color: Colors.blue),
-              title: const Text('Bagikan Struk PDF / File'),
-              subtitle: const Text('Kirim dokumen PDF / file bukti pembayaran'),
+              leading: const Icon(LucideIcons.image, color: Colors.blue),
+              title: const Text('Bagikan Gambar Struk Bukti (Thermal 58mm)'),
+              subtitle: const Text('Kirim gambar PNG struk bukti pembayaran'),
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
@@ -543,19 +570,25 @@ _Sabamas - Sistem Billing Sampah_
                     bulanDibayar: payment.bulanDibayar,
                     isPartial: false, 
                   );
-                  final pdfBytes = await ReceiptService.generatePdf(
-                    PdfPageFormat.a4,
+
+                  // Generate 58mm Thermal Receipt PNG image
+                  final pngBytes = await ReceiptService.generateReceiptImage(
                     result,
                     customerName: payment.customerNama,
                     customerWilayah: payment.customerWilayah,
                   );
-                  final tempDir = await getTemporaryDirectory();
-                  final file = await File('${tempDir.path}/Struk-${payment.id.substring(0, 8)}.pdf').create();
-                  await file.writeAsBytes(pdfBytes);
-                  await Share.shareXFiles([XFile(file.path)], text: text);
+
+                  if (kIsWeb) {
+                    await Printing.sharePdf(bytes: pngBytes, filename: 'Struk-${payment.id.substring(0, 8)}.png');
+                  } else {
+                    final tempDir = await getTemporaryDirectory();
+                    final file = await File('${tempDir.path}/Struk-${payment.id.substring(0, 8)}.png').create();
+                    await file.writeAsBytes(pngBytes);
+                    await Share.shareXFiles([XFile(file.path)], text: text);
+                  }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal berbagi PDF: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal membuat gambar struk: $e')));
                   }
                 }
               },
