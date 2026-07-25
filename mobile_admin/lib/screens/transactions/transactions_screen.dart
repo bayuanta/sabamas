@@ -650,7 +650,8 @@ _SABAMAS - Sistem Billing Sampah_
             ReceiptService.printReceipt(
               result, 
               customerName: payment.customerNama, 
-              customerWilayah: payment.customerWilayah
+              customerWilayah: payment.customerWilayah,
+              isThermalMode: true,
             );
           },
           icon: const Icon(LucideIcons.printer, size: 16),
