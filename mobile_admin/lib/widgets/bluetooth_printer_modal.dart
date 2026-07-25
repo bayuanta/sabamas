@@ -48,10 +48,8 @@ class _BluetoothPrinterModalState extends State<BluetoothPrinterModal> {
       _selectedName = device.name;
     });
 
+    await BluetoothPrintService.savePrinter(device.name, device.macAdress);
     final success = await BluetoothPrintService.connect(device.macAdress);
-    if (success) {
-      await BluetoothPrintService.savePrinter(device.name, device.macAdress);
-    }
 
     if (mounted) {
       setState(() => _isConnecting = false);

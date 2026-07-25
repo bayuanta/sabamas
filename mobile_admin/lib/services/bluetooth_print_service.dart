@@ -58,7 +58,17 @@ class BluetoothPrintService {
 
   static Future<bool> connect(String macAddress) async {
     try {
-      final bool result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
+      // Disconnect stale socket first
+      await PrintBluetoothThermal.disconnect;
+      await Future.delayed(const Duration(milliseconds: 250));
+
+      // Attempt 1
+      bool result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
+      if (result) return true;
+
+      // Attempt 2 (Retry for RP330N / ESC-POS printers)
+      await Future.delayed(const Duration(milliseconds: 500));
+      result = await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
       return result;
     } catch (e) {
       return false;
