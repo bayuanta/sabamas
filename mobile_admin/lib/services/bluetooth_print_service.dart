@@ -26,7 +26,7 @@ class BluetoothPrintService {
 
   static Future<List<BluetoothInfo>> getPairedDevices() async {
     try {
-      final List<BluetoothInfo> list = await PrintBluetoothThermal.pairedBluetoothByList;
+      final List<BluetoothInfo> list = await PrintBluetoothThermal.pairedBluetooths;
       return list;
     } catch (e) {
       return [];
