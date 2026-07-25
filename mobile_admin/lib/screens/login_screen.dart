@@ -277,10 +277,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ).animate().fadeIn(delay: 600.ms).scale(),
                   ],
                 ),
+              ),
             ),
-          ],
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 }
