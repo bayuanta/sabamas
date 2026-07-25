@@ -53,9 +53,22 @@ class ApiService {
         }
         return handler.next(options);
       },
-      onError: (DioException e, handler) {
-        if (e.response?.statusCode == 401) {
-          // TODO: Trigger logout
+      onError: (DioException e, handler) async {
+        if (e.response?.statusCode == 401 && e.requestOptions.path != '/auth/login') {
+          final savedUser = await _storage.read(key: 'saved_user');
+          final savedPass = await _storage.read(key: 'saved_pass');
+          if (savedUser != null && savedPass != null) {
+            try {
+              final loginRes = await login(savedUser, savedPass);
+              if (loginRes != null) {
+                await _storage.write(key: 'jwt_token', value: loginRes.accessToken);
+                final opts = e.requestOptions;
+                opts.headers['Authorization'] = 'Bearer ${loginRes.accessToken}';
+                final response = await _dio.fetch(opts);
+                return handler.resolve(response);
+              }
+            } catch (_) {}
+          }
         }
         return handler.next(e);
       },

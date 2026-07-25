@@ -48,8 +48,12 @@ class AuthProvider extends ChangeNotifier {
         
         if (rememberMe) {
           await _storage.write(key: 'jwt_token', value: _token);
+          await _storage.write(key: 'saved_user', value: username);
+          await _storage.write(key: 'saved_pass', value: password);
         } else {
           await _storage.delete(key: 'jwt_token');
+          await _storage.delete(key: 'saved_user');
+          await _storage.delete(key: 'saved_pass');
         }
 
         _isLoading = false;
@@ -69,6 +73,8 @@ class AuthProvider extends ChangeNotifier {
     _token = null;
     _currentUser = null;
     await _storage.delete(key: 'jwt_token');
+    await _storage.delete(key: 'saved_user');
+    await _storage.delete(key: 'saved_pass');
     notifyListeners();
   }
 }
